@@ -219,13 +219,13 @@ async function handleAction(page: Page, steps: Action[], imageDir: PathLike) {
       case "click":
         await page.waitForSelector(action.selector);
         await page.tap("body");
-        await page.$eval(action.selector, s => s.click());
+        await page.$eval(action.selector, s => (s as any).click());
         break;
 
       case "radio":
         await page.$eval(
           `${action.form.selector}[value="${action.form.value}"]`,
-          s => s.click()
+          s => (s as any).click()
         );
         break;
       case "select":
