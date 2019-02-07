@@ -1,0 +1,36 @@
+{
+  "name": "pprunner",
+  "version": "0.0.1",
+  "main": "lib/main.js",
+  "types": "lib/main.d.ts",
+  "repository": "akito0107/pprunner",
+  "license": "apache-2.0",
+  "author": {
+    "name": "Akito Ito",
+    "email": "akito0107@gmail.com"
+  },
+  "scripts": {
+    "lint": "tslint ./src/**/*.ts",
+    "lint:fix": "tslint --fix",
+    "clean": "rimraf ./lib/*",
+    "build": "yarn clean && tsc --outDir lib"
+  },
+  "devDependencies": {
+    "@types/faker": "^4.1.5",
+    "@types/pino": "^5.8.4",
+    "@types/puppeteer": "^1.12.1",
+    "power-assert": "^1.6.1",
+    "prettier": "^1.16.4",
+    "rimraf": "^2.6.3",
+    "tslint": "^5.12.1",
+    "tslint-config-prettier": "^1.18.0",
+    "tslint-plugin-prettier": "^2.0.1",
+    "typescript": "^3.3.1"
+  },
+  "dependencies": {
+    "faker": "^4.1.0",
+    "pino": "^5.11.1",
+    "puppeteer": "^1.12.2",
+    "randexp": "^0.5.3"
+  }
+}
