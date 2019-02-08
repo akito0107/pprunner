@@ -9,6 +9,9 @@
     "name": "Akito Ito",
     "email": "akito0107@gmail.com"
   },
+  "bin": {
+    "puppeteer-runner": "lib/bin/cli.js"
+  },
   "scripts": {
     "lint": "tslint ./src/**/*.ts",
     "lint:fix": "tslint --fix",
@@ -28,9 +31,12 @@
     "typescript": "^3.3.1"
   },
   "dependencies": {
+    "commander": "^2.19.0",
     "faker": "^4.1.0",
+    "js-yaml": "^3.12.1",
     "pino": "^5.11.1",
     "puppeteer": "^1.12.2",
-    "randexp": "^0.5.3"
+    "randexp": "^0.5.3",
+    "recursive-readdir": "^2.2.2"
   }
 }
