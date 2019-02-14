@@ -1,9 +1,7 @@
-import { default as assert } from "assert";
-import { default as faker } from "faker";
 import { PathLike } from "fs";
 import { default as pino } from "pino";
 import { default as puppeteer, LaunchOptions, Page } from "puppeteer";
-import { default as RandExp } from "randexp";
+import { ActionHandler } from "./handlers";
 
 const logger = pino();
 
@@ -18,7 +16,7 @@ export type Scenario = {
 };
 
 export type Action =
-  | InputActon
+  | InputAction
   | ClickAction
   | SelectAction
   | WaitAction
@@ -32,7 +30,7 @@ type Value =
       faker: string;
     };
 
-type actionType =
+export type ActionName =
   | "input"
   | "click"
   | "select"
@@ -41,20 +39,20 @@ type actionType =
   | "radio"
   | "screenshot";
 
-type ActionType<T extends actionType> = T extends "input"
-  ? "input"
+export type ActionType<T extends ActionName> = T extends "input"
+  ? InputAction
   : T extends "click"
-  ? "click"
+  ? ClickAction
   : T extends "select"
-  ? "select"
+  ? SelectAction
   : T extends "wait"
-  ? "wait"
+  ? WaitAction
   : T extends "ensure"
-  ? "ensure"
+  ? EnsureAction
   : T extends "radio"
-  ? "radio"
+  ? RadioAction
   : T extends "screenshot"
-  ? "screenshot"
+  ? ScreenshotAction
   : never;
 
 type Constrains = {
@@ -62,9 +60,9 @@ type Constrains = {
   regexp: string;
 };
 
-type InputActon = {
+export type InputAction = {
   action: {
-    type: ActionType<"input">;
+    type: "input";
     form: {
       selector: string;
       constrains?: Constrains;
@@ -73,16 +71,16 @@ type InputActon = {
   };
 };
 
-type ClickAction = {
+export type ClickAction = {
   action: {
-    type: ActionType<"click">;
+    type: "click";
     selector: string;
   };
 };
 
-type SelectAction = {
+export type SelectAction = {
   action: {
-    type: ActionType<"select">;
+    type: "select";
     form: {
       selector: string;
       constrains: {
@@ -93,30 +91,31 @@ type SelectAction = {
   };
 };
 
-type WaitAction = {
+export type WaitAction = {
   action: {
-    type: ActionType<"wait">;
+    type: "wait";
     duration: number;
   };
 };
 
-type ScreenshotAction = {
+export type ScreenshotAction = {
   action: {
-    type: ActionType<"screenshot">;
+    type: "screenshot";
     name: string;
   };
 };
 
-type EnsureAction = {
+export type EnsureAction = {
   action: {
     type: "ensure";
     location: {
-      value: string;
+      regexp?: string;
+      value?: string;
     };
   };
 };
 
-type RadioAction = {
+export type RadioAction = {
   action: {
     type: "radio";
     form: {
@@ -133,10 +132,12 @@ export type RunnerOption = {
   scenario: Scenario;
   imageDir: PathLike;
   launchOption?: LaunchOptions;
+  handlers: { [key in ActionName]: ActionHandler<key> };
 };
 
 export const run = async ({
   scenario,
+  handlers,
   imageDir,
   launchOption = {}
 }: RunnerOption) => {
@@ -154,7 +155,7 @@ export const run = async ({
   if (precondition) {
     await goto(page, precondition.url);
     try {
-      await handleAction(page, precondition.steps, imageDir);
+      await handleAction(page, handlers, precondition.steps, imageDir);
     } catch (e) {
       logger.error(e);
       await page.screenshot({ path: `${imageDir}/pre.png`, fullPage: true });
@@ -168,7 +169,7 @@ export const run = async ({
     logger.info(`${i} th iteration start`);
     try {
       await goto(page, scenario.url);
-      await handleAction(page, scenario.steps, imageDir);
+      await handleAction(page, handlers, scenario.steps, imageDir);
     } catch (e) {
       await page.screenshot({
         fullPage: true,
@@ -186,94 +187,21 @@ async function goto(page, url) {
   await page.goto(url, { waitUntil: "networkidle2" });
 }
 
-async function handleAction(page: Page, steps: Action[], imageDir: PathLike) {
+async function handleAction(
+  page: Page,
+  handlers: { [key in ActionName]: ActionHandler<key> },
+  steps: Action[],
+  imageDir: PathLike
+) {
   for (const step of steps) {
     const action = step.action;
     logger.info(action);
-    switch (action.type) {
-      case "input":
-        const input = action.form;
-        if (input.value) {
-          if (typeof input.value === "string") {
-            await page.type(input.selector, input.value);
-          } else {
-            const fake = faker.fake(`{{${input.value.faker}}}`);
-            await page.type(input.selector, fake);
-            break;
-          }
-        } else if (input.constrains && input.constrains.regexp) {
-          const regex = new RegExp(input.constrains.regexp);
-
-          const randex = new RandExp(regex);
-          randex.defaultRange.subtract(32, 126);
-          randex.defaultRange.add(0, 65535);
-
-          await page.type(input.selector, randex.gen());
-        }
-        break;
-
-      case "wait":
-        await page.waitFor(action.duration);
-        break;
-
-      case "click":
-        await page.waitForSelector(action.selector);
-        await page.tap("body");
-        await page.$eval(action.selector, s => (s as any).click());
-        break;
-
-      case "radio":
-        await page.$eval(
-          `${action.form.selector}[value="${action.form.value}"]`,
-          s => (s as any).click()
-        );
-        break;
-      case "select":
-        const select = action.form;
-        const v = select.constrains.values;
-        await page.select(
-          select.selector,
-          `${v[Math.floor(Math.random() * v.length)]}`
-        );
-        break;
-
-      case "ensure":
-        await ensure(page, action);
-        break;
-
-      case "screenshot":
-        const filename = action.name;
-        const now = Date.now();
-        await page.screenshot({
-          fullPage: true,
-          path: `${imageDir}/${filename + now.toLocaleString()}.png`
-        });
-        break;
-
-      default:
-        throw new Error(`unknown action type: ${(action as any).type}`);
+    const handler = handlers[action.type];
+    if (handler) {
+      await handler(page, { action } as any, { imageDir });
     }
-  }
-}
+    continue;
 
-async function ensure(page, conds) {
-  if (conds.location) {
-    const url = await page.url();
-
-    if (conds.location.value) {
-      assert.strictEqual(
-        url,
-        conds.location.value,
-        `location check failed: must be ${conds.location.value}, but: ${url}`
-      );
-    }
-
-    if (conds.location.regexp) {
-      const regexp = new RegExp(conds.location.regexp);
-      assert(
-        regexp.test(url),
-        `location check failed: must be ${conds.location.regexp}, but: ${url}`
-      );
-    }
+    throw new Error(`unknown action type: ${(action as any).type}`);
   }
 }

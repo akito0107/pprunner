@@ -5,6 +5,15 @@ import { default as fs } from "fs";
 import { default as yaml } from "js-yaml";
 import { default as path } from "path";
 import { default as readdir } from "recursive-readdir";
+import {
+  clickHandler,
+  ensureHandler,
+  inputHandler,
+  radioHandler,
+  screenshotHandler,
+  selectHandler,
+  waitHandler
+} from "../handlers";
 import { run } from "../main";
 
 program
@@ -32,4 +41,16 @@ async function main(pg) {
       scenario: doc
     });
   }
+}
+
+function registerHandler() {
+  return {
+    click: clickHandler,
+    ensure: ensureHandler,
+    input: inputHandler,
+    radio: radioHandler,
+    screenshot: screenshotHandler,
+    select: selectHandler,
+    wait: waitHandler
+  };
 }
