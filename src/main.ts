@@ -5,7 +5,11 @@ import { ActionHandler } from "./handlers";
 
 const logger = pino();
 
+import { default as d } from "debug";
+const debug = d("pprunner");
+
 export type Scenario = {
+  skip?: boolean;
   iteration: number;
   url: string;
   precondition: {
@@ -147,6 +151,7 @@ export const run = async ({
     ignoreHTTPSErrors: true,
     ...launchOption
   };
+  debug(opts);
   const browser = await puppeteer.launch(opts);
   const page = await browser.newPage();
 

@@ -16,6 +16,9 @@ import {
 } from "../handlers";
 import { run } from "../main";
 
+import { default as d } from "debug";
+const debug = d("pprunner");
+
 program
   .version("0.0.1")
   .option("-p, --path <caseDir>", "cases root dir")
@@ -33,6 +36,7 @@ process.on("unhandledRejection", err => {
 main(program);
 
 async function main(pg) {
+  debug(pg);
   const files = await readdir(path.resolve(process.cwd(), pg.path));
   const imageDir = path.resolve(process.cwd(), pg.imageDir);
 
@@ -58,10 +62,14 @@ async function main(pg) {
 
   for (const f of files) {
     const doc = yaml.safeLoad(fs.readFileSync(f));
+    if (doc.skip) {
+      process.stdout.write(`${f} skip...`);
+      continue;
+    }
     await run({
       handlers,
       imageDir,
-      launchOption: { headless: pg.disableHeadless },
+      launchOption: { headless: !pg.disableHeadless },
       scenario: doc
     });
   }
