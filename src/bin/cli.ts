@@ -37,7 +37,7 @@ async function main(pg) {
   const imageDir = path.resolve(process.cwd(), pg.imageDir);
 
   const extensions = {};
-  if (pg.extensionDir !== "") {
+  if (pg.extensionDir && pg.extensionDir !== "") {
     const extensionsDir = path.resolve(process.cwd(), pg.extensionDir);
     const filenames = fs.readdirSync(extensionsDir);
 
