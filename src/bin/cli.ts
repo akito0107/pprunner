@@ -20,11 +20,13 @@ program
   .version("0.0.1")
   .option("-p, --path <caseDir>", "cases root dir")
   .option("-i, --image-dir <imgDir>", "screehshots dir")
-  .option("-h, --headless", "headless mode (default=true)", true)
+  .option("-e, --extension-dir <exDir>", "extensions dir")
+  .option("-h, --disable-headless", "disable headless mode")
   .parse(process.argv);
 
 process.on("unhandledRejection", err => {
-  process.stderr.write(err.toString());
+  // tslint:disable-next-line
+  console.error(err);
   process.exit(1);
 });
 
@@ -33,17 +35,39 @@ main(program);
 async function main(pg) {
   const files = await readdir(path.resolve(process.cwd(), pg.path));
   const imageDir = path.resolve(process.cwd(), pg.imageDir);
+
+  const extensions = {};
+  if (pg.extensionDir !== "") {
+    const extensionsDir = path.resolve(process.cwd(), pg.extensionDir);
+    const filenames = fs.readdirSync(extensionsDir);
+
+    filenames.forEach(f => {
+      const mod = require(path.resolve(extensionsDir, f));
+      if (!mod.name) {
+        // tslint:disable-next-line
+        console.error(`module: ${f} is invalid. required name`);
+      }
+      extensions[mod.name] = mod.handler;
+    });
+  }
+
+  const handlers = {
+    ...defaultHandlers(),
+    ...extensions
+  };
+
   for (const f of files) {
     const doc = yaml.safeLoad(fs.readFileSync(f));
     await run({
+      handlers,
       imageDir,
-      launchOption: { headless: pg.headless },
+      launchOption: { headless: pg.disableHeadless },
       scenario: doc
     });
   }
 }
 
-function registerHandler() {
+function defaultHandlers() {
   return {
     click: clickHandler,
     ensure: ensureHandler,

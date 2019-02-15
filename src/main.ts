@@ -142,10 +142,10 @@ export const run = async ({
   launchOption = {}
 }: RunnerOption) => {
   const opts = {
-    ...launchOption,
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
     headless: false,
-    ignoreHTTPSErrors: true
+    ignoreHTTPSErrors: true,
+    ...launchOption
   };
   const browser = await puppeteer.launch(opts);
   const page = await browser.newPage();
