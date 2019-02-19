@@ -19,11 +19,19 @@ import { run } from "../main";
 import { default as d } from "debug";
 const debug = d("pprunner");
 
+import { default as pino } from "pino";
+const logger = pino();
+
 program
   .version("0.0.1")
   .option("-p, --path <caseDir>", "cases root dir")
   .option("-i, --image-dir <imgDir>", "screehshots dir")
   .option("-e, --extension-dir <exDir>", "extensions dir")
+  .option("-j, --parallel <parallel>", "run parallel (default = 1)")
+  .option(
+    "-t, --target <targetScenarios>",
+    "target scenario names (comma delimited)"
+  )
   .option("-h, --disable-headless", "disable headless mode")
   .parse(process.argv);
 
@@ -55,6 +63,9 @@ async function main(pg) {
     });
   }
 
+  const targetScenarios =
+    pg.target && pg.target !== "" ? pg.target.split(",") : [];
+
   const handlers = {
     ...defaultHandlers(),
     ...extensions
@@ -64,6 +75,15 @@ async function main(pg) {
     const doc = yaml.safeLoad(fs.readFileSync(f));
     if (doc.skip) {
       process.stdout.write(`${f} skip...`);
+      continue;
+    }
+
+    if (!doc.name) {
+      logger.warn(`scenario: ${f} must be set name prop`);
+      continue;
+    }
+    if (targetScenarios.length !== 0 && !targetScenarios.includes(doc.name)) {
+      debug(`skip scenario ${f}`);
       continue;
     }
     await run({

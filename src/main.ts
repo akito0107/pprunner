@@ -8,8 +8,20 @@ const logger = pino();
 import { default as d } from "debug";
 const debug = d("pprunner");
 
+// exports handlers
+export {
+  inputHandler,
+  waitHandler,
+  clickHandler,
+  radioHandler,
+  selectHandler,
+  ensureHandler,
+  screenshotHandler
+} from "./handlers";
+
 export type Scenario = {
   skip?: boolean;
+  name: string;
   iteration: number;
   url: string;
   precondition: {
@@ -173,6 +185,7 @@ export const run = async ({
   for (let i = 0; i < scenario.iteration; i++) {
     logger.info(`${i} th iteration start`);
     try {
+      logger.info(`${scenario.name} start`);
       await goto(page, scenario.url);
       await handleAction(page, handlers, scenario.steps, imageDir);
     } catch (e) {
