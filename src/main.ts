@@ -1,7 +1,9 @@
 import { PathLike } from "fs";
+import { default as produce } from "immer";
+import { reduce } from "p-iteration";
 import { default as pino } from "pino";
 import { default as puppeteer, LaunchOptions, Page } from "puppeteer";
-import { ActionHandler } from "./handlers";
+import { ActionHandler, Context } from "./handlers";
 
 const logger = pino();
 
@@ -168,11 +170,32 @@ export const run = async ({
   const page = await browser.newPage();
 
   logger.info("precondition start.");
+
+  const context: Context = {
+    currentIteration: 0,
+    precondition: { steps: [] },
+    steps: []
+  };
+
   const precondition = scenario.precondition;
   if (precondition) {
     await goto(page, precondition.url);
     try {
-      await handleAction(page, handlers, precondition.steps, imageDir);
+      await handleAction(
+        0,
+        page,
+        handlers,
+        precondition.steps,
+        {
+          context,
+          imageDir
+        },
+        (ctx, res) => {
+          return produce(ctx, draft => {
+            draft.precondition.steps.push(ctx);
+          });
+        }
+      );
     } catch (e) {
       logger.error(e);
       await page.screenshot({ path: `${imageDir}/pre.png`, fullPage: true });
@@ -187,7 +210,21 @@ export const run = async ({
     try {
       logger.info(`${scenario.name} start`);
       await goto(page, scenario.url);
-      await handleAction(page, handlers, scenario.steps, imageDir);
+      await handleAction(
+        i,
+        page,
+        handlers,
+        scenario.steps,
+        {
+          context,
+          imageDir
+        },
+        (ctx, res) => {
+          return produce(ctx, draft => {
+            draft.steps.push(res);
+          });
+        }
+      );
     } catch (e) {
       await page.screenshot({
         fullPage: true,
@@ -205,21 +242,35 @@ async function goto(page, url) {
   await page.goto(url, { waitUntil: "networkidle2" });
 }
 
+type ContextReducer = (ctx: Context, res: object) => Context;
+
 async function handleAction(
+  iteration: number,
   page: Page,
   handlers: { [key in ActionName]: ActionHandler<key> },
   steps: Action[],
-  imageDir: PathLike
+  { imageDir, context }: { imageDir: PathLike; context: Context },
+  reducer: ContextReducer
 ) {
-  for (const step of steps) {
-    const action = step.action;
-    logger.info(action);
-    const handler = handlers[action.type];
-    if (handler) {
-      await handler(page, { action } as any, { imageDir });
-    }
-    continue;
-
-    throw new Error(`unknown action type: ${(action as any).type}`);
-  }
+  await reduce(
+    steps,
+    async (acc: Context, step) => {
+      const action = step.action;
+      logger.info(action);
+      const handler = handlers[action.type];
+      if (handler) {
+        const res = await handler(page, { action } as any, {
+          context: {
+            ...acc,
+            currentIteration: iteration
+          },
+          imageDir
+        });
+        return reducer(acc, res);
+      } else {
+        throw new Error(`unknown action type: ${(action as any).type}`);
+      }
+    },
+    context
+  );
 }

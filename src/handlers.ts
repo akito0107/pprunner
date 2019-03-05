@@ -1,24 +1,36 @@
 import { default as assert } from "assert";
 import { default as faker } from "faker";
 import { PathLike } from "fs";
+import { default as produce } from "immer";
 import { Page } from "puppeteer";
 import { default as RandExp } from "randexp";
 import { ActionName, ActionType } from "./main";
 
+export type Context = {
+  currentIteration: number;
+  precondition: {
+    steps: Array<{}>;
+  };
+  steps: Array<{}>;
+};
+
 export type ActionHandler<T extends ActionName> = (
-  context: Page,
+  page: Page,
   action: ActionType<T>,
-  options?: { imageDir: PathLike }
+  options?: { imageDir: PathLike; context: Context }
 ) => Promise<any>;
 
-export const inputHandler: ActionHandler<"input"> = async (ctx, { action }) => {
+export const inputHandler: ActionHandler<"input"> = async (
+  page,
+  { action }
+) => {
   const input = action.form;
   if (input.value) {
     if (typeof input.value === "string") {
-      await ctx.type(input.selector, input.value);
+      await page.type(input.selector, input.value);
     } else {
       const fake = faker.fake(`{{${input.value.faker}}}`);
-      await ctx.type(input.selector, fake);
+      await page.type(input.selector, fake);
       return;
     }
   } else if (input.constrains && input.constrains.regexp) {
@@ -28,44 +40,50 @@ export const inputHandler: ActionHandler<"input"> = async (ctx, { action }) => {
     randex.defaultRange.subtract(32, 126);
     randex.defaultRange.add(0, 65535);
 
-    await ctx.type(input.selector, randex.gen());
+    await page.type(input.selector, randex.gen());
   }
 };
 
-export const waitHandler: ActionHandler<"wait"> = async (ctx, { action }) => {
-  await ctx.waitFor(action.duration);
+export const waitHandler: ActionHandler<"wait"> = async (page, { action }) => {
+  await page.waitFor(action.duration);
 };
 
-export const clickHandler: ActionHandler<"click"> = async (ctx, { action }) => {
-  await ctx.waitForSelector(action.selector);
-  await ctx.tap("body");
-  await ctx.$eval(action.selector, s => (s as any).click());
+export const clickHandler: ActionHandler<"click"> = async (
+  page,
+  { action }
+) => {
+  await page.waitForSelector(action.selector);
+  await page.tap("body");
+  await page.$eval(action.selector, s => (s as any).click());
 };
 
-export const radioHandler: ActionHandler<"radio"> = async (ctx, { action }) => {
-  await ctx.$eval(`${action.form.selector}[value="${action.form.value}"]`, s =>
+export const radioHandler: ActionHandler<"radio"> = async (
+  page,
+  { action }
+) => {
+  await page.$eval(`${action.form.selector}[value="${action.form.value}"]`, s =>
     (s as any).click()
   );
 };
 
 export const selectHandler: ActionHandler<"select"> = async (
-  ctx,
+  page,
   { action }
 ) => {
   const select = action.form;
   const v = select.constrains.values;
-  await ctx.select(
+  await page.select(
     select.selector,
     `${v[Math.floor(Math.random() * v.length)]}`
   );
 };
 
 export const ensureHandler: ActionHandler<"ensure"> = async (
-  ctx,
+  page,
   { action }
 ) => {
   if (action.location) {
-    const url = await ctx.url();
+    const url = await page.url();
 
     if (action.location.value) {
       assert.strictEqual(
@@ -86,13 +104,13 @@ export const ensureHandler: ActionHandler<"ensure"> = async (
 };
 
 export const screenshotHandler: ActionHandler<"screenshot"> = async (
-  ctx,
+  page,
   { action },
   { imageDir }
 ) => {
   const filename = action.name;
   const now = Date.now();
-  await ctx.screenshot({
+  await page.screenshot({
     fullPage: true,
     path: `${imageDir}/${filename + now.toLocaleString()}.png`
   });
