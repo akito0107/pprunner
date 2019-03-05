@@ -2,7 +2,7 @@
 
 [puppeteer](https://github.com/GoogleChrome/puppeteer) runner.
 
-[![npm version](https://badge.fury.io/js/pprunner.svg)](https://badge.fury.io/js/pprunner)
+[![npm version](https://badge.fury.io/js/pprunner.svg)](https://badge.fury.io/js/pprunner) [![Greenkeeper badge](https://badges.greenkeeper.io/akito0107/pprunner.svg)](https://greenkeeper.io/)
 
 ## Getting Started
 
