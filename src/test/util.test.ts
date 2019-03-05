@@ -4,7 +4,7 @@ import { default as path } from "path";
 import { convert } from "../util";
 
 const expectedConvertYaml = ({ hostUrl, userId, password }) => `skip: false
-name: 'sample'
+name: 'convert_test'
 version: 1
 url: '${hostUrl}/login'
 iteration: 1
