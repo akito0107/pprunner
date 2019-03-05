@@ -15,6 +15,7 @@ import {
   waitHandler
 } from "../handlers";
 import { run } from "../main";
+import { convert } from "../util";
 
 import { default as d } from "debug";
 const debug = d("pprunner");
@@ -72,7 +73,11 @@ async function main(pg) {
   };
 
   for (const f of files) {
-    const doc = yaml.safeLoad(fs.readFileSync(f));
+    const originalBuffer = fs.readFileSync(f);
+    const originalYaml = originalBuffer.toString();
+    const convertedYaml = convert(originalYaml);
+
+    const doc = yaml.safeLoad(convertedYaml);
     if (doc.skip) {
       process.stdout.write(`${f} skip...`);
       continue;
