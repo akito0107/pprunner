@@ -8,14 +8,31 @@ trigger:
 
 pool:
   vmImage: 'Ubuntu-16.04'
+strategy:
+  matrix:
+    node_8x:
+      node_version: 8.x
+    node_10x:
+      node_version: 10.x
+    node_11x:
+      node_version: 11.x
 
 steps:
 - task: NodeTool@0
   inputs:
-    versionSpec: '8.x'
+    versionSpec: $(node_version)
   displayName: 'Install Node.js'
 
 - script: |
     yarn install
-    yarn tsc
-  displayName: 'npm install and build'
+    yarn build
+  displayName: 'yarn install and build'
+
+- script: |
+    yarn lint
+  displayName: 'lint'
+
+- script: |
+    yarn test
+  displayName: 'test'
+
