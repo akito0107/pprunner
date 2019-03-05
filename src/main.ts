@@ -3,7 +3,7 @@ import { default as produce } from "immer";
 import { reduce } from "p-iteration";
 import { default as pino } from "pino";
 import { default as puppeteer, LaunchOptions, Page } from "puppeteer";
-import { ActionHandler, Context } from "./handlers";
+import { ActionHandler, Context, gotoHandler } from "./handlers";
 
 const logger = pino();
 
@@ -18,7 +18,8 @@ export {
   radioHandler,
   selectHandler,
   ensureHandler,
-  screenshotHandler
+  screenshotHandler,
+  gotoHandler
 } from "./handlers";
 
 export type Scenario = {
@@ -40,7 +41,8 @@ export type Action =
   | WaitAction
   | EnsureAction
   | RadioAction
-  | ScreenshotAction;
+  | ScreenshotAction
+  | GotoAction;
 
 type Value =
   | string
@@ -55,7 +57,8 @@ export type ActionName =
   | "wait"
   | "ensure"
   | "radio"
-  | "screenshot";
+  | "screenshot"
+  | "goto";
 
 export type ActionType<T extends ActionName> = T extends "input"
   ? InputAction
@@ -71,6 +74,8 @@ export type ActionType<T extends ActionName> = T extends "input"
   ? RadioAction
   : T extends "screenshot"
   ? ScreenshotAction
+  : T extends "goto"
+  ? GotoAction
   : never;
 
 type Constrains = {
@@ -79,6 +84,7 @@ type Constrains = {
 };
 
 export type InputAction = {
+  name?: string;
   action: {
     type: "input";
     form: {
@@ -90,6 +96,7 @@ export type InputAction = {
 };
 
 export type ClickAction = {
+  name?: string;
   action: {
     type: "click";
     selector: string;
@@ -97,6 +104,7 @@ export type ClickAction = {
 };
 
 export type SelectAction = {
+  name?: string;
   action: {
     type: "select";
     form: {
@@ -110,6 +118,7 @@ export type SelectAction = {
 };
 
 export type WaitAction = {
+  name?: string;
   action: {
     type: "wait";
     duration: number;
@@ -117,6 +126,7 @@ export type WaitAction = {
 };
 
 export type ScreenshotAction = {
+  name?: string;
   action: {
     type: "screenshot";
     name: string;
@@ -124,6 +134,7 @@ export type ScreenshotAction = {
 };
 
 export type EnsureAction = {
+  name?: string;
   action: {
     type: "ensure";
     location: {
@@ -134,6 +145,7 @@ export type EnsureAction = {
 };
 
 export type RadioAction = {
+  name?: string;
   action: {
     type: "radio";
     form: {
@@ -143,6 +155,14 @@ export type RadioAction = {
       };
       value: string;
     };
+  };
+};
+
+export type GotoAction = {
+  name?: string;
+  action: {
+    type: "goto";
+    url: string;
   };
 };
 
@@ -179,7 +199,9 @@ export const run = async ({
 
   const precondition = scenario.precondition;
   if (precondition) {
-    await goto(page, precondition.url);
+    await gotoHandler(page, {
+      action: { type: "goto", url: precondition.url }
+    });
     try {
       await handleAction(
         0,
@@ -209,7 +231,7 @@ export const run = async ({
     logger.info(`${i} th iteration start`);
     try {
       logger.info(`${scenario.name} start`);
-      await goto(page, scenario.url);
+      await gotoHandler(page, { action: { type: "goto", url: scenario.url } });
       await handleAction(
         i,
         page,
@@ -238,10 +260,6 @@ export const run = async ({
   await browser.close();
 };
 
-async function goto(page, url) {
-  await page.goto(url, { waitUntil: "networkidle2" });
-}
-
 type ContextReducer = (ctx: Context, res: object) => Context;
 
 async function handleAction(
@@ -252,24 +270,23 @@ async function handleAction(
   { imageDir, context }: { imageDir: PathLike; context: Context },
   reducer: ContextReducer
 ) {
-  await reduce(
+  return reduce(
     steps,
     async (acc: Context, step) => {
       const action = step.action;
       logger.info(action);
       const handler = handlers[action.type];
-      if (handler) {
-        const res = await handler(page, { action } as any, {
-          context: {
-            ...acc,
-            currentIteration: iteration
-          },
-          imageDir
-        });
-        return reducer(acc, res);
-      } else {
+      if (!handler) {
         throw new Error(`unknown action type: ${(action as any).type}`);
       }
+      const res = await handler(page, { action } as any, {
+        context: {
+          ...acc,
+          currentIteration: iteration
+        },
+        imageDir
+      });
+      return reducer(acc, res);
     },
     context
   );

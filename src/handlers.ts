@@ -1,7 +1,6 @@
 import { default as assert } from "assert";
 import { default as faker } from "faker";
 import { PathLike } from "fs";
-import { default as produce } from "immer";
 import { Page } from "puppeteer";
 import { default as RandExp } from "randexp";
 import { ActionName, ActionType } from "./main";
@@ -28,10 +27,11 @@ export const inputHandler: ActionHandler<"input"> = async (
   if (input.value) {
     if (typeof input.value === "string") {
       await page.type(input.selector, input.value);
+      return { selector: input.selector, value: input.value };
     } else {
       const fake = faker.fake(`{{${input.value.faker}}}`);
       await page.type(input.selector, fake);
-      return;
+      return { selector: input.selector, value: fake };
     }
   } else if (input.constrains && input.constrains.regexp) {
     const regex = new RegExp(input.constrains.regexp);
@@ -40,12 +40,16 @@ export const inputHandler: ActionHandler<"input"> = async (
     randex.defaultRange.subtract(32, 126);
     randex.defaultRange.add(0, 65535);
 
+    const v = randex.gen();
+
     await page.type(input.selector, randex.gen());
+    return { selector: input.selector, value: v };
   }
 };
 
 export const waitHandler: ActionHandler<"wait"> = async (page, { action }) => {
   await page.waitFor(action.duration);
+  return { selector: "", value: action.duration };
 };
 
 export const clickHandler: ActionHandler<"click"> = async (
@@ -55,6 +59,7 @@ export const clickHandler: ActionHandler<"click"> = async (
   await page.waitForSelector(action.selector);
   await page.tap("body");
   await page.$eval(action.selector, s => (s as any).click());
+  return { selector: action.selector, value: true };
 };
 
 export const radioHandler: ActionHandler<"radio"> = async (
@@ -64,6 +69,7 @@ export const radioHandler: ActionHandler<"radio"> = async (
   await page.$eval(`${action.form.selector}[value="${action.form.value}"]`, s =>
     (s as any).click()
   );
+  return { selector: action.form.selector, value: action.form.value };
 };
 
 export const selectHandler: ActionHandler<"select"> = async (
@@ -72,10 +78,9 @@ export const selectHandler: ActionHandler<"select"> = async (
 ) => {
   const select = action.form;
   const v = select.constrains.values;
-  await page.select(
-    select.selector,
-    `${v[Math.floor(Math.random() * v.length)]}`
-  );
+  const value = v[Math.floor(Math.random() * v.length)];
+  await page.select(select.selector, `${value}`);
+  return { selector: select.selector, value };
 };
 
 export const ensureHandler: ActionHandler<"ensure"> = async (
@@ -101,6 +106,8 @@ export const ensureHandler: ActionHandler<"ensure"> = async (
       );
     }
   }
+
+  return { selector: "", value: true };
 };
 
 export const screenshotHandler: ActionHandler<"screenshot"> = async (
@@ -114,4 +121,10 @@ export const screenshotHandler: ActionHandler<"screenshot"> = async (
     fullPage: true,
     path: `${imageDir}/${filename + now.toLocaleString()}.png`
   });
+
+  return { selector: "", value: true };
+};
+
+export const gotoHandler: ActionHandler<"goto"> = async (page, { action }) => {
+  await page.goto(action.url, { waitUntil: "networkidle2" });
 };

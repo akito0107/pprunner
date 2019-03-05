@@ -8,6 +8,7 @@ import { default as readdir } from "recursive-readdir";
 import {
   clickHandler,
   ensureHandler,
+  gotoHandler,
   inputHandler,
   radioHandler,
   screenshotHandler,
@@ -104,6 +105,7 @@ function defaultHandlers() {
   return {
     click: clickHandler,
     ensure: ensureHandler,
+    goto: gotoHandler,
     input: inputHandler,
     radio: radioHandler,
     screenshot: screenshotHandler,
