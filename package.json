@@ -14,9 +14,10 @@
   },
   "scripts": {
     "lint": "tslint ./src/**/*.ts",
-    "lint:fix": "tslint --fix",
+    "lint:fix": "tslint ./src/**/*.ts --fix",
     "clean": "rimraf ./lib/*",
     "build": "yarn clean && tsc --outDir lib",
+    "watch": "yarn clean && tsc --outDir lib --watch",
     "test": "jest",
     "sample": "node ./lib/bin/cli.js -p samples -i images"
   },
