@@ -17,6 +17,7 @@
     "lint:fix": "tslint --fix",
     "clean": "rimraf ./lib/*",
     "build": "yarn clean && tsc --outDir lib",
+    "watch": "yarn clean && tsc --outDir lib --watch",
     "test": "jest",
     "sample": "node ./lib/bin/cli.js -p samples -i images"
   },

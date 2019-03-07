@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 
+import { default as cluster } from "cluster";
 import { default as program } from "commander";
 import { default as fs } from "fs";
 import { default as yaml } from "js-yaml";
 import { default as path } from "path";
 import { default as readdir } from "recursive-readdir";
 import {
+  ActionHandler,
   clickHandler,
   ensureHandler,
   inputHandler,
@@ -14,7 +16,7 @@ import {
   selectHandler,
   waitHandler
 } from "../handlers";
-import { run } from "../main";
+import { ActionName, run } from "../main";
 import { convert } from "../util";
 
 import { default as d } from "debug";
@@ -22,6 +24,9 @@ const debug = d("pprunner");
 
 import { default as pino } from "pino";
 const logger = pino();
+
+import os from "os";
+const numCPUs = os.cpus().length;
 
 program
   .version("0.0.1")
@@ -42,11 +47,16 @@ process.on("unhandledRejection", err => {
   process.exit(1);
 });
 
-main(program);
+type Options = {
+  imageDir: string;
+  targetScenarios: string[];
+  handlers: { [key in ActionName]: ActionHandler<key> };
+  headlessFlag: boolean;
+  parallel: number;
+  path: string;
+};
 
-async function main(pg) {
-  debug(pg);
-  const files = await readdir(path.resolve(process.cwd(), pg.path));
+function prepare(pg): Options {
   const imageDir = path.resolve(process.cwd(), pg.imageDir);
 
   const extensions = {};
@@ -72,32 +82,92 @@ async function main(pg) {
     ...extensions
   };
 
-  for (const f of files) {
-    const originalBuffer = fs.readFileSync(f);
-    const originalYaml = originalBuffer.toString();
-    const convertedYaml = convert(originalYaml);
+  return {
+    handlers,
+    headlessFlag: !pg.disableHeadless,
+    imageDir,
+    parallel: pg.parallel,
+    path: pg.path,
+    targetScenarios
+  };
+}
 
-    const doc = yaml.safeLoad(convertedYaml);
-    if (doc.skip) {
-      process.stdout.write(`${f} skip...`);
-      continue;
-    }
+async function pprun({
+  file,
+  options: { targetScenarios, handlers, imageDir, headlessFlag }
+}) {
+  const originalBuffer = fs.readFileSync(file);
+  const originalYaml = originalBuffer.toString();
+  const convertedYaml = convert(originalYaml);
 
-    if (!doc.name) {
-      logger.warn(`scenario: ${f} must be set name prop`);
-      continue;
-    }
-    if (targetScenarios.length !== 0 && !targetScenarios.includes(doc.name)) {
-      debug(`skip scenario ${f}`);
-      continue;
-    }
-    await run({
-      handlers,
-      imageDir,
-      launchOption: { headless: !pg.disableHeadless },
-      scenario: doc
-    });
+  const doc = yaml.safeLoad(convertedYaml);
+  if (doc.skip) {
+    process.stdout.write(`${file} skip...`);
+    return;
   }
+
+  if (!doc.name) {
+    logger.warn(`scenario: ${file} must be set name prop`);
+    return;
+  }
+  if (targetScenarios.length !== 0 && !targetScenarios.find(doc.name)) {
+    debug(`skip scenario ${file}`);
+    return;
+  }
+  await run({
+    handlers,
+    imageDir,
+    launchOption: { headless: headlessFlag },
+    scenario: doc
+  });
+}
+
+async function main(pg) {
+  debug(pg);
+  const { parallel, path: caseDir, ...options } = prepare(pg);
+
+  if (cluster.isMaster) {
+    const files: string[] = await readdir(path.resolve(process.cwd(), caseDir));
+    if (!parallel) {
+      // single thread
+      for (const f of files) {
+        await pprun({ file: f, options });
+      }
+      return;
+    }
+    // multi thread
+    const pNum = Math.max(numCPUs, parallel);
+    for (let i = 0; i < pNum; i++) {
+      cluster.fork();
+    }
+    const workerIds = Object.keys(cluster.workers);
+    const workers = workerIds.map(id => cluster.workers[id]);
+
+    let index = 0;
+    let done = 0;
+    workers.forEach(worker => {
+      worker.on("message", message => {
+        if (message === "done") {
+          done++;
+        }
+        if (done === files.length) {
+          // All files finished
+          process.exit();
+        }
+        const file = files[index++];
+        if (file) {
+          worker.send({ file });
+        }
+      });
+    });
+    return;
+  }
+  // worker
+  process.send("ready");
+  process.on("message", async message => {
+    await pprun({ file: message.file, options });
+    process.send("done");
+  });
 }
 
 function defaultHandlers() {
@@ -111,3 +181,5 @@ function defaultHandlers() {
     wait: waitHandler
   };
 }
+
+main(program);
