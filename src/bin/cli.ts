@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import cluster from "cluster";
+import { default as cluster } from "cluster";
 import { default as program } from "commander";
 import { default as fs } from "fs";
 import { default as yaml } from "js-yaml";
@@ -16,7 +16,7 @@ import {
   selectHandler,
   waitHandler
 } from "../handlers";
-import { run } from "../main";
+import { ActionName, run } from "../main";
 import { convert } from "../util";
 
 import { default as d } from "debug";
@@ -50,7 +50,7 @@ process.on("unhandledRejection", err => {
 type Options = {
   imageDir: string;
   targetScenarios: string[];
-  handlers: { [key: string]: ActionHandler<any> };
+  handlers: { [key in ActionName]: ActionHandler<key> };
   headlessFlag: boolean;
   parallel: number;
   path: string;
