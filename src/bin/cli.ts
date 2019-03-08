@@ -8,7 +8,8 @@ import { default as path } from "path";
 import { default as readdir } from "recursive-readdir";
 import * as ChromeHandlers from "../handlers/chrome-handlers";
 import * as IEHandlers from "../handlers/ie-handlers";
-import { getBrowser, ActionName, run } from "../main";
+import { ActionHandler } from "../handlers/types";
+import { ActionName, getBrowser, run } from "../main";
 import { convert } from "../util";
 
 import { default as d } from "debug";
@@ -47,6 +48,7 @@ type Options = {
   headlessFlag: boolean;
   parallel: number;
   path: string;
+  browserType: string;
 };
 
 export type BrowserType = "ie" | "chrome";
@@ -78,6 +80,7 @@ function prepare(pg): Options {
   };
 
   return {
+    browserType: pg.browser,
     handlers,
     headlessFlag: !pg.disableHeadless,
     imageDir,
@@ -89,7 +92,7 @@ function prepare(pg): Options {
 
 async function pprun({
   file,
-  options: { targetScenarios, handlers, imageDir, headlessFlag }
+  options: { targetScenarios, handlers, imageDir, headlessFlag, browserType }
 }) {
   const originalBuffer = fs.readFileSync(file);
   const originalYaml = originalBuffer.toString();
@@ -101,16 +104,25 @@ async function pprun({
     return;
   }
 
-    if (!doc.name) {
-      logger.warn(`scenario: ${f} must be set name prop`);
-      return;
-    }
-    if (targetScenarios.length !== 0 && !targetScenarios.includes(doc.name)) {
-      debug(`skip scenario ${f}`);
-      return;
-    }
+  if (!doc.name) {
+    logger.warn(`scenario: ${file} must be set name prop`);
+    return;
+  }
+  if (targetScenarios.length !== 0 && !targetScenarios.includes(doc.name)) {
+    debug(`skip scenario ${file}`);
+    return;
+  }
+
+  const opts = {
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    headless: headlessFlag,
+    ignoreHTTPSErrors: true
+  };
+  debug(opts);
+  const browser = await getBrowser(browserType, opts);
 
   await run({
+    browser,
     handlers,
     imageDir,
     launchOption: { headless: headlessFlag },
