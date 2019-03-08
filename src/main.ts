@@ -1,7 +1,10 @@
 import { PathLike } from "fs";
 import { default as pino } from "pino";
 import { default as puppeteer, LaunchOptions, Page } from "puppeteer";
-import { ActionHandler } from "./handlers";
+import { Builder, WebDriver } from "selenium-webdriver";
+import { BrowserType } from "./bin/cli";
+import { ActionHandler } from "./handlers/types";
+import { isPuppeteer } from "./util";
 
 const logger = pino();
 
@@ -9,15 +12,9 @@ import { default as d } from "debug";
 const debug = d("pprunner");
 
 // exports handlers
-export {
-  inputHandler,
-  waitHandler,
-  clickHandler,
-  radioHandler,
-  selectHandler,
-  ensureHandler,
-  screenshotHandler
-} from "./handlers";
+import * as ChromeHandlers from "./handlers/chrome-handlers";
+import * as IEHandlers from "./handlers/ie-handlers";
+export { ChromeHandlers, IEHandlers };
 
 export type Scenario = {
   skip?: boolean;
@@ -38,7 +35,9 @@ export type Action =
   | WaitAction
   | EnsureAction
   | RadioAction
-  | ScreenshotAction;
+  | ScreenshotAction
+  | GotoAction
+  | ClearAction;
 
 type Value =
   | string
@@ -53,7 +52,9 @@ export type ActionName =
   | "wait"
   | "ensure"
   | "radio"
-  | "screenshot";
+  | "screenshot"
+  | "goto"
+  | "clear";
 
 export type ActionType<T extends ActionName> = T extends "input"
   ? InputAction
@@ -69,6 +70,10 @@ export type ActionType<T extends ActionName> = T extends "input"
   ? RadioAction
   : T extends "screenshot"
   ? ScreenshotAction
+  : T extends "goto"
+  ? GotoAction
+  : T extends "clear"
+  ? ClearAction
   : never;
 
 type Constrains = {
@@ -144,38 +149,66 @@ export type RadioAction = {
   };
 };
 
+export type GotoAction = {
+  action: {
+    type: "goto";
+    url: string;
+  };
+};
+
+export type ClearAction = {
+  action: {
+    type: "clear";
+    selector: string;
+  };
+};
+
 export type RunnerOption = {
+  browser: puppeteer.Browser | WebDriver;
   scenario: Scenario;
   imageDir: PathLike;
   launchOption?: LaunchOptions;
   handlers: { [key in ActionName]: ActionHandler<key> };
 };
 
+export async function getBrowser(
+  type: BrowserType,
+  opts
+): Promise<puppeteer.Browser | WebDriver> {
+  return type === "ie"
+    ? new Builder().forBrowser("internet explorer").build()
+    : puppeteer.launch(opts);
+}
+
 export const run = async ({
+  browser,
   scenario,
   handlers,
-  imageDir,
-  launchOption = {}
+  imageDir
 }: RunnerOption) => {
-  const opts = {
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    headless: false,
-    ignoreHTTPSErrors: true,
-    ...launchOption
-  };
-  debug(opts);
-  const browser = await puppeteer.launch(opts);
-  const page = await browser.newPage();
-
   logger.info("precondition start.");
+
+  let page: puppeteer.Page | WebDriver = browser as WebDriver;
+  if (isPuppeteer(browser)) {
+    page = await (browser as puppeteer.Browser).newPage();
+  }
+
   const precondition = scenario.precondition;
   if (precondition) {
-    await goto(page, precondition.url);
+    await handlers.goto(page, {
+      action: { type: "goto", url: precondition.url }
+    });
     try {
       await handleAction(page, handlers, precondition.steps, imageDir);
     } catch (e) {
       logger.error(e);
-      await page.screenshot({ path: `${imageDir}/pre.png`, fullPage: true });
+      await handlers.screenshot(
+        page,
+        {
+          action: { type: "screenshot", name: "pre" }
+        },
+        { imageDir }
+      );
     }
     logger.info("precondition done.");
   }
@@ -186,13 +219,18 @@ export const run = async ({
     logger.info(`${i} th iteration start`);
     try {
       logger.info(`${scenario.name} start`);
-      await goto(page, scenario.url);
+      await handlers.goto(page, {
+        action: { type: "goto", url: scenario.url }
+      });
       await handleAction(page, handlers, scenario.steps, imageDir);
     } catch (e) {
-      await page.screenshot({
-        fullPage: true,
-        path: `${imageDir}/${now.toLocaleString()}-${i}.png`
-      });
+      await handlers.screenshot(
+        page,
+        {
+          action: { type: "screenshot", name: i.toString() }
+        },
+        { imageDir }
+      );
       throw e;
     }
   }
@@ -201,12 +239,8 @@ export const run = async ({
   await browser.close();
 };
 
-async function goto(page, url) {
-  await page.goto(url, { waitUntil: "networkidle2" });
-}
-
 async function handleAction(
-  page: Page,
+  page: Page | WebDriver,
   handlers: { [key in ActionName]: ActionHandler<key> },
   steps: Action[],
   imageDir: PathLike

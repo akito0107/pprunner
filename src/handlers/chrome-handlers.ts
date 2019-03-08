@@ -1,17 +1,13 @@
 import { default as assert } from "assert";
 import { default as faker } from "faker";
-import { PathLike } from "fs";
 import { Page } from "puppeteer";
 import { default as RandExp } from "randexp";
-import { ActionName, ActionType } from "./main";
+import { ActionHandler } from "./types";
 
-export type ActionHandler<T extends ActionName> = (
-  context: Page,
-  action: ActionType<T>,
-  options?: { imageDir: PathLike }
-) => Promise<any>;
-
-export const inputHandler: ActionHandler<"input"> = async (ctx, { action }) => {
+export const inputHandler: ActionHandler<"input"> = async (
+  ctx: Page,
+  { action }
+) => {
   const input = action.form;
   if (input.value) {
     if (typeof input.value === "string") {
@@ -32,24 +28,33 @@ export const inputHandler: ActionHandler<"input"> = async (ctx, { action }) => {
   }
 };
 
-export const waitHandler: ActionHandler<"wait"> = async (ctx, { action }) => {
+export const waitHandler: ActionHandler<"wait"> = async (
+  ctx: Page,
+  { action }
+) => {
   await ctx.waitFor(action.duration);
 };
 
-export const clickHandler: ActionHandler<"click"> = async (ctx, { action }) => {
+export const clickHandler: ActionHandler<"click"> = async (
+  ctx: Page,
+  { action }
+) => {
   await ctx.waitForSelector(action.selector);
   await ctx.tap("body");
   await ctx.$eval(action.selector, s => (s as any).click());
 };
 
-export const radioHandler: ActionHandler<"radio"> = async (ctx, { action }) => {
+export const radioHandler: ActionHandler<"radio"> = async (
+  ctx: Page,
+  { action }
+) => {
   await ctx.$eval(`${action.form.selector}[value="${action.form.value}"]`, s =>
     (s as any).click()
   );
 };
 
 export const selectHandler: ActionHandler<"select"> = async (
-  ctx,
+  ctx: Page,
   { action }
 ) => {
   const select = action.form;
@@ -61,7 +66,7 @@ export const selectHandler: ActionHandler<"select"> = async (
 };
 
 export const ensureHandler: ActionHandler<"ensure"> = async (
-  ctx,
+  ctx: Page,
   { action }
 ) => {
   if (action.location) {
@@ -86,7 +91,7 @@ export const ensureHandler: ActionHandler<"ensure"> = async (
 };
 
 export const screenshotHandler: ActionHandler<"screenshot"> = async (
-  ctx,
+  ctx: Page,
   { action },
   { imageDir }
 ) => {
@@ -96,4 +101,17 @@ export const screenshotHandler: ActionHandler<"screenshot"> = async (
     fullPage: true,
     path: `${imageDir}/${filename + now.toLocaleString()}.png`
   });
+};
+
+export const gotoHandler: ActionHandler<"goto"> = async (
+  ctx: Page,
+  { action }
+) => {
+  await ctx.goto(action.url, { waitUntil: "networkidle2" });
+};
+
+export const clearHandler = async (ctx: Page, { action }) => {
+  await ctx.waitForSelector(action.selector);
+  await ctx.click(action.selector, { clickCount: 3 });
+  await ctx.keyboard.press("Backspace");
 };

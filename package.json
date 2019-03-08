@@ -26,6 +26,7 @@
     "@types/jest": "^24.0.9",
     "@types/pino": "^5.8.4",
     "@types/puppeteer": "^1.12.1",
+    "@types/selenium-webdriver": "^3.0.15",
     "jest": "^24.1.0",
     "power-assert": "^1.6.1",
     "prettier": "^1.16.4",
@@ -45,6 +46,7 @@
     "pino": "^5.11.1",
     "puppeteer": "^1.12.2",
     "randexp": "^0.5.3",
-    "recursive-readdir": "^2.2.2"
+    "recursive-readdir": "^2.2.2",
+    "selenium-webdriver": "^4.0.0-alpha.1"
   }
 }

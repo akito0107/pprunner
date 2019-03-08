@@ -28,6 +28,16 @@ Options:
   -t, --target <targetScenarios>  target scenario names (comma delimited)
   -h, --disable-headless          disable headless mode
   -h, --help                      output usage information
+  -b, --browser                   browser type (default puppeteer)
+```
+
+## selenium-webdriver
+You can also run pprunner on Internet Explorer 11 using [selenium-webdriver](https://www.seleniumhq.org/projects/webdriver/).
+
+Please run and connect a [selenium-standalone-server](https://www.seleniumhq.org/download/).
+
+```
+ SELENIUM_REMOTE_URL=http://${selenium-server-host}:4444/wd/hub pprunner -b ie -p ${caseDir} -i ${imageDir}
 ```
 
 ## License

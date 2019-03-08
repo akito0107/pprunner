@@ -6,17 +6,9 @@ import { default as fs } from "fs";
 import { default as yaml } from "js-yaml";
 import { default as path } from "path";
 import { default as readdir } from "recursive-readdir";
-import {
-  ActionHandler,
-  clickHandler,
-  ensureHandler,
-  inputHandler,
-  radioHandler,
-  screenshotHandler,
-  selectHandler,
-  waitHandler
-} from "../handlers";
-import { ActionName, run } from "../main";
+import * as ChromeHandlers from "../handlers/chrome-handlers";
+import * as IEHandlers from "../handlers/ie-handlers";
+import { getBrowser, ActionName, run } from "../main";
 import { convert } from "../util";
 
 import { default as d } from "debug";
@@ -39,6 +31,7 @@ program
     "target scenario names (comma delimited)"
   )
   .option("-h, --disable-headless", "disable headless mode")
+  .option("-b, --browser <targetBrowser>", "target browser (defaut = chrome)")
   .parse(process.argv);
 
 process.on("unhandledRejection", err => {
@@ -55,6 +48,8 @@ type Options = {
   parallel: number;
   path: string;
 };
+
+export type BrowserType = "ie" | "chrome";
 
 function prepare(pg): Options {
   const imageDir = path.resolve(process.cwd(), pg.imageDir);
@@ -78,7 +73,7 @@ function prepare(pg): Options {
     pg.target && pg.target !== "" ? pg.target.split(",") : [];
 
   const handlers = {
-    ...defaultHandlers(),
+    ...getHandlers(pg.browser),
     ...extensions
   };
 
@@ -106,14 +101,15 @@ async function pprun({
     return;
   }
 
-  if (!doc.name) {
-    logger.warn(`scenario: ${file} must be set name prop`);
-    return;
-  }
-  if (targetScenarios.length !== 0 && !targetScenarios.find(doc.name)) {
-    debug(`skip scenario ${file}`);
-    return;
-  }
+    if (!doc.name) {
+      logger.warn(`scenario: ${f} must be set name prop`);
+      return;
+    }
+    if (targetScenarios.length !== 0 && !targetScenarios.includes(doc.name)) {
+      debug(`skip scenario ${f}`);
+      return;
+    }
+
   await run({
     handlers,
     imageDir,
@@ -170,15 +166,19 @@ async function main(pg) {
   });
 }
 
-function defaultHandlers() {
+function getHandlers(browser: BrowserType) {
+  const handlers = browser === "ie" ? IEHandlers : ChromeHandlers;
+
   return {
-    click: clickHandler,
-    ensure: ensureHandler,
-    input: inputHandler,
-    radio: radioHandler,
-    screenshot: screenshotHandler,
-    select: selectHandler,
-    wait: waitHandler
+    clear: handlers.clearHandler,
+    click: handlers.clickHandler,
+    ensure: handlers.ensureHandler,
+    goto: handlers.gotoHandler,
+    input: handlers.inputHandler,
+    radio: handlers.radioHandler,
+    screenshot: handlers.screenshotHandler,
+    select: handlers.selectHandler,
+    wait: handlers.waitHandler
   };
 }
 
