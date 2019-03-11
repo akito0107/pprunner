@@ -2,6 +2,7 @@ import { default as assert } from "assert";
 import { default as faker } from "faker";
 import { Page } from "puppeteer";
 import { default as RandExp } from "randexp";
+import { getBrowserType } from "../util";
 import { ActionHandler } from "./types";
 
 export const inputHandler: ActionHandler<"input"> = async (
@@ -99,7 +100,7 @@ export const screenshotHandler: ActionHandler<"screenshot"> = async (
   const now = Date.now();
   await ctx.screenshot({
     fullPage: true,
-    path: `${imageDir}/${filename + now.toLocaleString()}.png`
+    path: `${imageDir}/${getBrowserType(ctx)}-${now}-${filename}.png`
   });
 };
 

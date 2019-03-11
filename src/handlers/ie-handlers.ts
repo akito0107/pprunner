@@ -4,6 +4,7 @@ import { default as fs } from "fs";
 import { default as RandExp } from "randexp";
 import { By, Key, WebDriver } from "selenium-webdriver";
 import { promisify } from "util";
+import { getBrowserType } from "../util";
 import { ActionHandler } from "./types";
 
 export const inputHandler: ActionHandler<"input"> = async (
@@ -58,7 +59,7 @@ export async function radioHandler(driver, { action }) {
   const radioFunction = function(form) {
     const element = Array.from(document.querySelectorAll(form.selector)).filter(
       function(el) {
-        return el.value === form.value;
+        return el.value === form.value.toString();
       }
     )[0];
     element.click();
@@ -97,7 +98,7 @@ export const screenshotHandler: ActionHandler<"screenshot"> = async (
   const filename = action.name;
   const now = Date.now();
   const image = await driver.takeScreenshot();
-  const path = `${imageDir}/${filename}${now.toLocaleString()}.png`;
+  const path = `${imageDir}/${getBrowserType(driver)}-${now}-${filename}.png`;
   await promisify(fs.writeFile)(path, image, "base64");
 };
 

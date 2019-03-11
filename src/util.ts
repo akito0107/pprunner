@@ -15,3 +15,7 @@ export function convert(yaml: string): string {
 export function isPuppeteer(browser: any): browser is puppeteer.Browser {
   return browser.newPage !== undefined;
 }
+
+export function getBrowserType(browser: any): string {
+  return isPuppeteer(browser) ? "chrome" : "ie";
+}
