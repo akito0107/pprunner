@@ -43,7 +43,16 @@ export const clickHandler: ActionHandler<"click"> = async (
   driver: WebDriver,
   { action }
 ) => {
-  await driver.findElement(By.css(action.selector)).click();
+  /* tslint:disable only-arrow-functions */
+  const scrollIntoViewIfNeeded = function(el) {
+    const rect = el.getBoundingClientRect();
+    window.scrollTo(rect.left, rect.top / 2);
+  };
+  /* tslint:enable */
+  const element = driver.findElement(By.css(action.selector));
+  await driver.executeScript(scrollIntoViewIfNeeded, element);
+  await driver.sleep(1000);
+  await element.click();
 };
 
 export async function selectHandler(driver, { action }) {
