@@ -10,7 +10,7 @@ import * as ChromeHandlers from "../handlers/chrome-handlers";
 import * as IEHandlers from "../handlers/ie-handlers";
 import { ActionHandler } from "../handlers/types";
 import { ActionName, getBrowser, run } from "../main";
-import { convert } from "../util";
+import { BrowserType, convert } from "../util";
 
 import { default as d } from "debug";
 const debug = d("pprunner");
@@ -50,8 +50,6 @@ type Options = {
   path: string;
   browserType: string;
 };
-
-export type BrowserType = "ie" | "chrome";
 
 function prepare(pg): Options {
   const imageDir = path.resolve(process.cwd(), pg.imageDir);

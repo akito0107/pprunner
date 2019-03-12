@@ -2,9 +2,8 @@ import { PathLike } from "fs";
 import { default as pino } from "pino";
 import { default as puppeteer, LaunchOptions, Page } from "puppeteer";
 import { Builder, WebDriver } from "selenium-webdriver";
-import { BrowserType } from "./bin/cli";
 import { ActionHandler } from "./handlers/types";
-import { isPuppeteer } from "./util";
+import { BrowserType, isPuppeteer } from "./util";
 
 const logger = pino();
 
