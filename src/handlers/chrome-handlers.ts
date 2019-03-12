@@ -13,10 +13,17 @@ export const inputHandler: ActionHandler<"input"> = async (
   if (input.value) {
     if (typeof input.value === "string") {
       await ctx.type(input.selector, input.value);
-    } else {
+    } else if (input.value.faker) {
       const fake = faker.fake(`{{${input.value.faker}}}`);
       await ctx.type(input.selector, fake);
-      return;
+    } else if (input.value.date) {
+      const d = new Date(input.value.date);
+      const date = d.getDate();
+      const month = d.getMonth() + 1;
+      const dateStr = `${date < 10 ? "0" + date : date}${
+        month < 10 ? "0" + month : month
+      }${d.getFullYear()}`;
+      await ctx.type(input.selector, dateStr);
     }
   } else if (input.constrains && input.constrains.regexp) {
     const regex = new RegExp(input.constrains.regexp);

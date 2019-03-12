@@ -43,6 +43,7 @@ type Value =
   | string
   | {
       faker: string;
+      date: string;
     };
 
 export type ActionName =

@@ -17,10 +17,17 @@ export const inputHandler: ActionHandler<"input"> = async (
   if (input.value) {
     if (typeof input.value === "string") {
       await target.sendKeys(input.value);
-    } else {
+    } else if (input.value.faker) {
       const fake = faker.fake(`{{${input.value.faker}}}`);
       await target.sendKeys(fake);
-      return;
+    } else if (input.value.date) {
+      const d = new Date(input.value.date);
+      const date = d.getDate();
+      const month = d.getMonth() + 1;
+      const dateStr = `${d.getFullYear()}-${month < 10 ? "0" + month : month}-${
+        date < 10 ? "0" + date : date
+      }`;
+      await target.sendKeys(dateStr);
     }
   } else if (input.constrains && input.constrains.regexp) {
     const regex = new RegExp(input.constrains.regexp);
