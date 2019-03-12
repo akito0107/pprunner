@@ -27,7 +27,7 @@
     "@types/pino": "^5.8.4",
     "@types/puppeteer": "^1.12.1",
     "@types/selenium-webdriver": "^3.0.15",
-    "jest": "^24.1.0",
+    "jest": "^24.4.0",
     "power-assert": "^1.6.1",
     "prettier": "^1.16.4",
     "rimraf": "^2.6.3",
