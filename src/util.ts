@@ -1,4 +1,6 @@
 import { default as Handlebars } from "handlebars";
+import { default as puppeteer } from "puppeteer";
+export type BrowserType = "ie" | "chrome";
 
 export function convert(yaml: string): string {
   const data = {
@@ -9,4 +11,12 @@ export function convert(yaml: string): string {
   const template = Handlebars.compile(yaml);
   const converted = template(data);
   return converted;
+}
+
+export function isPuppeteer(browser: any): browser is puppeteer.Browser {
+  return browser.newPage !== undefined;
+}
+
+export function getBrowserType(browser: any): BrowserType {
+  return isPuppeteer(browser) ? "chrome" : "ie";
 }

@@ -6,18 +6,11 @@ import { default as fs } from "fs";
 import { default as yaml } from "js-yaml";
 import { default as path } from "path";
 import { default as readdir } from "recursive-readdir";
-import {
-  ActionHandler,
-  clickHandler,
-  ensureHandler,
-  inputHandler,
-  radioHandler,
-  screenshotHandler,
-  selectHandler,
-  waitHandler
-} from "../handlers";
-import { ActionName, run } from "../main";
-import { convert } from "../util";
+import * as ChromeHandlers from "../handlers/chrome-handlers";
+import * as IEHandlers from "../handlers/ie-handlers";
+import { ActionHandler } from "../handlers/types";
+import { ActionName, getBrowser, run } from "../main";
+import { BrowserType, convert } from "../util";
 
 import { default as d } from "debug";
 const debug = d("pprunner");
@@ -39,6 +32,7 @@ program
     "target scenario names (comma delimited)"
   )
   .option("-h, --disable-headless", "disable headless mode")
+  .option("-b, --browser <targetBrowser>", "target browser (defaut = chrome)")
   .parse(process.argv);
 
 process.on("unhandledRejection", err => {
@@ -54,6 +48,7 @@ type Options = {
   headlessFlag: boolean;
   parallel: number;
   path: string;
+  browserType: string;
 };
 
 function prepare(pg): Options {
@@ -78,11 +73,12 @@ function prepare(pg): Options {
     pg.target && pg.target !== "" ? pg.target.split(",") : [];
 
   const handlers = {
-    ...defaultHandlers(),
+    ...getHandlers(pg.browser),
     ...extensions
   };
 
   return {
+    browserType: pg.browser,
     handlers,
     headlessFlag: !pg.disableHeadless,
     imageDir,
@@ -94,7 +90,7 @@ function prepare(pg): Options {
 
 async function pprun({
   file,
-  options: { targetScenarios, handlers, imageDir, headlessFlag }
+  options: { targetScenarios, handlers, imageDir, headlessFlag, browserType }
 }) {
   const originalBuffer = fs.readFileSync(file);
   const originalYaml = originalBuffer.toString();
@@ -110,11 +106,21 @@ async function pprun({
     logger.warn(`scenario: ${file} must be set name prop`);
     return;
   }
-  if (targetScenarios.length !== 0 && !targetScenarios.find(doc.name)) {
+  if (targetScenarios.length !== 0 && !targetScenarios.includes(doc.name)) {
     debug(`skip scenario ${file}`);
     return;
   }
+
+  const opts = {
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    headless: headlessFlag,
+    ignoreHTTPSErrors: true
+  };
+  debug(opts);
+  const browser = await getBrowser(browserType, opts);
+
   await run({
+    browser,
     handlers,
     imageDir,
     launchOption: { headless: headlessFlag },
@@ -170,15 +176,19 @@ async function main(pg) {
   });
 }
 
-function defaultHandlers() {
+function getHandlers(browser: BrowserType) {
+  const handlers = browser === "ie" ? IEHandlers : ChromeHandlers;
+
   return {
-    click: clickHandler,
-    ensure: ensureHandler,
-    input: inputHandler,
-    radio: radioHandler,
-    screenshot: screenshotHandler,
-    select: selectHandler,
-    wait: waitHandler
+    clear: handlers.clearHandler,
+    click: handlers.clickHandler,
+    ensure: handlers.ensureHandler,
+    goto: handlers.gotoHandler,
+    input: handlers.inputHandler,
+    radio: handlers.radioHandler,
+    screenshot: handlers.screenshotHandler,
+    select: handlers.selectHandler,
+    wait: handlers.waitHandler
   };
 }
 
