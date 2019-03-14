@@ -66,11 +66,18 @@ export const selectHandler: ActionHandler<"select"> = async (
   { action }
 ) => {
   const select = action.form;
-  const v = select.constrains.values;
-  await ctx.select(
-    select.selector,
-    `${v[Math.floor(Math.random() * v.length)]}`
-  );
+  const v = select.constrains && select.constrains.values;
+  if (v && v.length > 0) {
+    await ctx.select(
+      select.selector,
+      `${v[Math.floor(Math.random() * v.length)]}`
+    );
+    return;
+  }
+  const value = await ctx.evaluate(selector => {
+    return document.querySelector(selector).children[1].value;
+  }, select.selector);
+  await ctx.select(select.selector, `${value}`);
 };
 
 export const ensureHandler: ActionHandler<"ensure"> = async (

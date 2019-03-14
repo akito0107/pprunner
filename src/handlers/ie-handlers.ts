@@ -64,8 +64,21 @@ export const clickHandler: ActionHandler<"click"> = async (
 
 export async function selectHandler(driver, { action }) {
   const select = action.form;
-  const v = select.constrains.values;
-  const value = v[Math.floor(Math.random() * v.length)];
+  const v = select.constrains && select.constrains.values;
+  let value = "";
+  if (v && v.length > 0) {
+    value = v[Math.floor(Math.random() * v.length)];
+  } else {
+    /* tslint:disable only-arrow-functions */
+    const selectValueFunction = function(parentSelector) {
+      return document.querySelector(parentSelector).children[0].value;
+    };
+    /* tslint:enable */
+    value = await driver.executeScript(
+      selectValueFunction,
+      action.form.selector
+    );
+  }
   const selector = `${select.selector} [value='${value}']`;
   await driver.findElement(By.css(selector)).click();
 }
