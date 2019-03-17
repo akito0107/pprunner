@@ -1,0 +1,23 @@
+{
+  "name": "create-next-example-app",
+  "scripts": {
+    "dev": "next",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@zeit/next-typescript": "^1.1.1",
+    "fork-ts-checker-webpack-plugin": "^1.0.0",
+    "next": "^8.0.3",
+    "react": "^16.8.4",
+    "react-dom": "^16.8.4"
+  },
+  "devDependencies": {
+    "@material-ui/core": "^3.9.2",
+    "@material-ui/icons": "^3.0.2",
+    "@material-ui/styles": "^3.0.0-alpha.10",
+    "@types/next": "^8.0.1",
+    "@types/react": "^16.8.8",
+    "typescript": "^3.3.3333"
+  }
+}
