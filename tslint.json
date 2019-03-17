@@ -11,6 +11,7 @@
     "no-submodule-imports": false,
     "jsx-no-multiline-js": false,
     "jsx-curly-spacing": false,
+    "jsx-no-lambda": false,
     "object-literal-sort-keys": false,
     "no-implicit-dependencies": [true, "dev"]
   }

@@ -5,16 +5,20 @@ import {
   CardContent,
   CardHeader,
   CardMedia,
+  Collapse,
   Grid,
   IconButton,
   Typography
 } from "@material-ui/core";
 import { red } from "@material-ui/core/colors";
+import ExpandMoreIcon from "@material-ui/icons/ExpandMore";
 import FavoriteIcon from "@material-ui/icons/Favorite";
 import MoreVertIcon from "@material-ui/icons/MoreVert";
 import ShareIcon from "@material-ui/icons/Share";
 import { makeStyles } from "@material-ui/styles";
-import * as React from "react";
+import classnames from "classnames";
+import Link from "next/link";
+import { useState } from "react";
 import Layout from "../components/layout";
 
 function Page() {
@@ -40,6 +44,8 @@ function Page() {
       backgroundColor: red[500]
     }
   })();
+
+  const [expanded, setExpanded] = useState(false);
 
   return (
     <Layout>
@@ -81,7 +87,22 @@ function Page() {
             <IconButton aria-label="Share">
               <ShareIcon />
             </IconButton>
+            <IconButton
+              className={classnames(classes.expand, {
+                [classes.expandOpen]: expanded
+              })}
+              onClick={() => setExpanded(!expanded)}
+              aria-expanded={expanded}
+              aria-label="Show more"
+            >
+              <ExpandMoreIcon />
+            </IconButton>
           </CardActions>
+          <Collapse in={expanded} timeout="auto" unmountOnExit={true}>
+            <Link href={`/form`}>
+              <a data-test-target="click-point">show form</a>
+            </Link>
+          </Collapse>
         </Card>
       </Grid>
       <Grid item={true}>
