@@ -13,9 +13,8 @@ import { default as d } from "debug";
 const debug = d("pprunner");
 
 // exports handlers
-import * as ChromeHandlers from "./handlers/chrome-handlers";
-import * as IEHandlers from "./handlers/ie-handlers";
-export { ChromeHandlers, IEHandlers };
+export * from "./handlers/chrome-handlers";
+export * from "./handlers/ie-handlers";
 
 export type Scenario = {
   skip?: boolean;
