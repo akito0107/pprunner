@@ -7,7 +7,7 @@ import { promisify } from "util";
 import { getBrowserType } from "../util";
 import { ActionHandler } from "./types";
 
-export const inputHandler: ActionHandler<"input"> = async (
+export const inputHandler: ActionHandler<"input", "IE"> = async (
   driver: WebDriver,
   { action }
 ) => {
@@ -39,14 +39,14 @@ export const inputHandler: ActionHandler<"input"> = async (
   }
 };
 
-export const waitHandler: ActionHandler<"wait"> = async (
+export const waitHandler: ActionHandler<"wait", "IE"> = async (
   driver: WebDriver,
   { action }
 ) => {
   await driver.sleep(action.duration);
 };
 
-export const clickHandler: ActionHandler<"click"> = async (
+export const clickHandler: ActionHandler<"click", "IE"> = async (
   driver: WebDriver,
   { action }
 ) => {
@@ -119,7 +119,7 @@ export async function ensureHandler(driver, { action }) {
   }
 }
 
-export const screenshotHandler: ActionHandler<"screenshot"> = async (
+export const screenshotHandler: ActionHandler<"screenshot", "IE"> = async (
   driver: WebDriver,
   { action },
   { imageDir }
@@ -131,14 +131,14 @@ export const screenshotHandler: ActionHandler<"screenshot"> = async (
   await promisify(fs.writeFile)(path, image, "base64");
 };
 
-export const gotoHandler: ActionHandler<"goto"> = async (
+export const gotoHandler: ActionHandler<"goto", "IE"> = async (
   driver: WebDriver,
   { action }
 ) => {
   await driver.get(action.url);
 };
 
-export const clearHandler: ActionHandler<"clear"> = async (
+export const clearHandler: ActionHandler<"clear", "IE"> = async (
   driver: WebDriver,
   { action }
 ) => {

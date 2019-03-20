@@ -1,8 +1,10 @@
 import { PathLike } from "fs";
+import { default as produce } from "immer";
+import { reduce } from "p-iteration";
 import { default as pino } from "pino";
 import { default as puppeteer, LaunchOptions, Page } from "puppeteer";
 import { Builder, WebDriver } from "selenium-webdriver";
-import { ActionHandler } from "./handlers/types";
+import { ActionHandler, Context } from "./handlers/types";
 import { BrowserType, isPuppeteer } from "./util";
 
 const logger = pino();
@@ -194,12 +196,28 @@ export const run = async ({
   }
 
   const precondition = scenario.precondition;
+  const context: Context = {
+    currentIteration: 0,
+    precondition: { steps: [] },
+    steps: []
+  };
   if (precondition) {
     await handlers.goto(page, {
       action: { type: "goto", url: precondition.url }
     });
     try {
-      await handleAction(page, handlers, precondition.steps, imageDir);
+      await handleAction(
+        0,
+        page,
+        handlers,
+        precondition.steps,
+        { imageDir, context },
+        (ctx, res) => {
+          return produce(ctx, draft => {
+            draft.precondition.steps.push(res);
+          });
+        }
+      );
     } catch (e) {
       logger.error(e);
       await handlers.screenshot(
@@ -222,7 +240,18 @@ export const run = async ({
       await handlers.goto(page, {
         action: { type: "goto", url: scenario.url }
       });
-      await handleAction(page, handlers, scenario.steps, imageDir);
+      await handleAction(
+        i,
+        page,
+        handlers,
+        scenario.steps,
+        { context, imageDir },
+        (ctx, res) => {
+          return produce(ctx, draft => {
+            draft.steps.push(res);
+          });
+        }
+      );
     } catch (e) {
       await handlers.screenshot(
         page,
@@ -239,21 +268,34 @@ export const run = async ({
   await browser.close();
 };
 
+type ContextReducer = (ctx: Context, res: object) => Context;
+
 async function handleAction(
+  iteration: number,
   page: Page | WebDriver,
   handlers: { [key in ActionName]: ActionHandler<key> },
   steps: Action[],
-  imageDir: PathLike
+  { imageDi, context }: { imageDir: PathLike; context: Context },
+  reducer: ContextReducer
 ) {
-  for (const step of steps) {
-    const action = step.action;
-    logger.info(action);
-    const handler = handlers[action.type];
-    if (handler) {
-      await handler(page, { action } as any, { imageDir });
-    }
-    continue;
-
-    throw new Error(`unknown action type: ${(action as any).type}`);
-  }
+  return reduce(
+    steps,
+    async (acc: Context, step) => {
+      const action = step.action;
+      logger.info(action);
+      const handler = handlers[action.type];
+      if (!handler) {
+        throw new Error(`unknown action type: ${(action as any).type}`);
+      }
+      const res = await handler(page, { action } as any, {
+        context: {
+          ...acc,
+          currentIteration: iteration
+        },
+        imageDir
+      });
+      return reducer(acc, res);
+    },
+    context
+  );
 }

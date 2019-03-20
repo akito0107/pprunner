@@ -24,6 +24,7 @@
     "test:e2e:start-app": "cd e2e; yarn start"
   },
   "devDependencies": {
+    "@types/debug": "^4.1.2",
     "@types/faker": "^4.1.5",
     "@types/jest": "^24.0.11",
     "@types/node": "^11.11.4",
@@ -50,7 +51,9 @@
     "debug": "^4.1.1",
     "faker": "^4.1.0",
     "handlebars": "^4.1.0",
+    "immer": "^2.1.4",
     "js-yaml": "^3.12.1",
+    "p-iteration": "^1.1.8",
     "pino": "^5.11.1",
     "puppeteer": "^1.12.2",
     "randexp": "^0.5.3",

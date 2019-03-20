@@ -5,17 +5,17 @@ import { default as RandExp } from "randexp";
 import { getBrowserType } from "../util";
 import { ActionHandler } from "./types";
 
-export const inputHandler: ActionHandler<"input"> = async (
-  ctx: Page,
+export const inputHandler: ActionHandler<"input", "Chrome"> = async (
+  page: Page,
   { action }
 ) => {
   const input = action.form;
   if (input.value) {
     if (typeof input.value === "string") {
-      await ctx.type(input.selector, input.value);
+      await page.type(input.selector, input.value);
     } else if (input.value.faker) {
       const fake = faker.fake(`{{${input.value.faker}}}`);
-      await ctx.type(input.selector, fake);
+      await page.type(input.selector, fake);
     } else if (input.value.date) {
       const d = new Date(input.value.date);
       const date = d.getDate();
@@ -23,7 +23,7 @@ export const inputHandler: ActionHandler<"input"> = async (
       const dateStr = `${date < 10 ? "0" + date : date}${
         month < 10 ? "0" + month : month
       }${d.getFullYear()}`;
-      await ctx.type(input.selector, dateStr);
+      await page.type(input.selector, dateStr);
     }
   } else if (input.constrains && input.constrains.regexp) {
     const regex = new RegExp(input.constrains.regexp);
@@ -32,60 +32,60 @@ export const inputHandler: ActionHandler<"input"> = async (
     randex.defaultRange.subtract(32, 126);
     randex.defaultRange.add(0, 65535);
 
-    await ctx.type(input.selector, randex.gen());
+    await page.type(input.selector, randex.gen());
   }
 };
 
-export const waitHandler: ActionHandler<"wait"> = async (
-  ctx: Page,
+export const waitHandler: ActionHandler<"wait", "Chrome"> = async (
+  page: Page,
   { action }
 ) => {
-  await ctx.waitFor(action.duration);
+  await page.waitFor(action.duration);
 };
 
-export const clickHandler: ActionHandler<"click"> = async (
-  ctx: Page,
+export const clickHandler: ActionHandler<"click", "Chrome"> = async (
+  page: Page,
   { action }
 ) => {
-  await ctx.waitForSelector(action.selector);
-  await ctx.tap("body");
-  await ctx.$eval(action.selector, s => (s as any).click());
+  await page.waitForSelector(action.selector);
+  await page.tap("body");
+  await page.$eval(action.selector, s => (s as any).click());
 };
 
-export const radioHandler: ActionHandler<"radio"> = async (
-  ctx: Page,
+export const radioHandler: ActionHandler<"radio", "Chrome"> = async (
+  page: Page,
   { action }
 ) => {
-  await ctx.$eval(`${action.form.selector}[value="${action.form.value}"]`, s =>
+  await page.$eval(`${action.form.selector}[value="${action.form.value}"]`, s =>
     (s as any).click()
   );
 };
 
-export const selectHandler: ActionHandler<"select"> = async (
-  ctx: Page,
+export const selectHandler: ActionHandler<"select", "Chrome"> = async (
+  page: Page,
   { action }
 ) => {
   const select = action.form;
   const v = select.constrains && select.constrains.values;
   if (v && v.length > 0) {
-    await ctx.select(
+    await page.select(
       select.selector,
       `${v[Math.floor(Math.random() * v.length)]}`
     );
     return;
   }
-  const value = await ctx.evaluate(selector => {
+  const value = await page.evaluate(selector => {
     return document.querySelector(selector).children[1].value;
   }, select.selector);
-  await ctx.select(select.selector, `${value}`);
+  await page.select(select.selector, `${value}`);
 };
 
-export const ensureHandler: ActionHandler<"ensure"> = async (
-  ctx: Page,
+export const ensureHandler: ActionHandler<"ensure", "Chrome"> = async (
+  page: Page,
   { action }
 ) => {
   if (action.location) {
-    const url = await ctx.url();
+    const url = await page.url();
 
     if (action.location.value) {
       assert.strictEqual(
@@ -105,28 +105,31 @@ export const ensureHandler: ActionHandler<"ensure"> = async (
   }
 };
 
-export const screenshotHandler: ActionHandler<"screenshot"> = async (
-  ctx: Page,
+export const screenshotHandler: ActionHandler<"screenshot", "Chrome"> = async (
+  page: Page,
   { action },
   { imageDir }
 ) => {
   const filename = action.name;
   const now = Date.now();
-  await ctx.screenshot({
+  await page.screenshot({
     fullPage: true,
-    path: `${imageDir}/${getBrowserType(ctx)}-${now}-${filename}.png`
+    path: `${imageDir}/${getBrowserType(page)}-${now}-${filename}.png`
   });
 };
 
-export const gotoHandler: ActionHandler<"goto"> = async (
-  ctx: Page,
+export const gotoHandler: ActionHandler<"goto", "Chrome"> = async (
+  page: Page,
   { action }
 ) => {
-  await ctx.goto(action.url, { waitUntil: "networkidle2" });
+  await page.goto(action.url, { waitUntil: "networkidle2" });
 };
 
-export const clearHandler = async (ctx: Page, { action }) => {
-  await ctx.waitForSelector(action.selector);
-  await ctx.click(action.selector, { clickCount: 3 });
-  await ctx.keyboard.press("Backspace");
+export const clearHandler: ActionHandler<"clear", "Chrome"> = async (
+  page: Page,
+  { action }
+) => {
+  await page.waitForSelector(action.selector);
+  await page.click(action.selector, { clickCount: 3 });
+  await page.keyboard.press("Backspace");
 };
