@@ -4,7 +4,6 @@ import {
   ensureHandler,
   inputHandler,
   radioHandler,
-  screenshotHandler,
   selectHandler,
   waitHandler
 } from "../chrome-handlers";

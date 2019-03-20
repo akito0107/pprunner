@@ -2,10 +2,10 @@ import { default as assert } from "assert";
 import { default as faker } from "faker";
 import { Page } from "puppeteer";
 import { default as RandExp } from "randexp";
+import { ActionHandler } from "../types";
 import { getBrowserType } from "../util";
-import { ActionHandler } from "./types";
 
-export const inputHandler: ActionHandler<"input", "Chrome"> = async (
+export const inputHandler: ActionHandler<"input", "chrome"> = async (
   page: Page,
   { action }
 ) => {
@@ -36,14 +36,14 @@ export const inputHandler: ActionHandler<"input", "Chrome"> = async (
   }
 };
 
-export const waitHandler: ActionHandler<"wait", "Chrome"> = async (
+export const waitHandler: ActionHandler<"wait", "chrome"> = async (
   page: Page,
   { action }
 ) => {
   await page.waitFor(action.duration);
 };
 
-export const clickHandler: ActionHandler<"click", "Chrome"> = async (
+export const clickHandler: ActionHandler<"click", "chrome"> = async (
   page: Page,
   { action }
 ) => {
@@ -52,7 +52,7 @@ export const clickHandler: ActionHandler<"click", "Chrome"> = async (
   await page.$eval(action.selector, s => (s as any).click());
 };
 
-export const radioHandler: ActionHandler<"radio", "Chrome"> = async (
+export const radioHandler: ActionHandler<"radio", "chrome"> = async (
   page: Page,
   { action }
 ) => {
@@ -61,7 +61,7 @@ export const radioHandler: ActionHandler<"radio", "Chrome"> = async (
   );
 };
 
-export const selectHandler: ActionHandler<"select", "Chrome"> = async (
+export const selectHandler: ActionHandler<"select", "chrome"> = async (
   page: Page,
   { action }
 ) => {
@@ -80,7 +80,7 @@ export const selectHandler: ActionHandler<"select", "Chrome"> = async (
   await page.select(select.selector, `${value}`);
 };
 
-export const ensureHandler: ActionHandler<"ensure", "Chrome"> = async (
+export const ensureHandler: ActionHandler<"ensure", "chrome"> = async (
   page: Page,
   { action }
 ) => {
@@ -105,7 +105,7 @@ export const ensureHandler: ActionHandler<"ensure", "Chrome"> = async (
   }
 };
 
-export const screenshotHandler: ActionHandler<"screenshot", "Chrome"> = async (
+export const screenshotHandler: ActionHandler<"screenshot", "chrome"> = async (
   page: Page,
   { action },
   { imageDir }
@@ -118,14 +118,14 @@ export const screenshotHandler: ActionHandler<"screenshot", "Chrome"> = async (
   });
 };
 
-export const gotoHandler: ActionHandler<"goto", "Chrome"> = async (
+export const gotoHandler: ActionHandler<"goto", "chrome"> = async (
   page: Page,
   { action }
 ) => {
   await page.goto(action.url, { waitUntil: "networkidle2" });
 };
 
-export const clearHandler: ActionHandler<"clear", "Chrome"> = async (
+export const clearHandler: ActionHandler<"clear", "chrome"> = async (
   page: Page,
   { action }
 ) => {

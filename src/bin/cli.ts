@@ -2,15 +2,20 @@
 
 import { default as cluster } from "cluster";
 import { default as program } from "commander";
-import { default as fs } from "fs";
+import { default as fs, PathLike } from "fs";
 import { default as yaml } from "js-yaml";
 import { default as path } from "path";
 import { default as readdir } from "recursive-readdir";
-import * as ChromeHandlers from "../handlers/chrome-handlers";
-import * as IEHandlers from "../handlers/ie-handlers";
-import { ActionHandler } from "../handlers/types";
-import { ActionName, getBrowser, run } from "../main";
-import { BrowserType, convert } from "../util";
+import {
+  ActionHandler,
+  ActionName,
+  BrowserType,
+  ChromeHandler,
+  getBrowser,
+  IEHandler,
+  run
+} from "../main";
+import { convert } from "../util";
 
 import { default as d } from "debug";
 const debug = d("pprunner");
@@ -44,11 +49,11 @@ process.on("unhandledRejection", err => {
 type Options = {
   imageDir: string;
   targetScenarios: string[];
-  handlers: { [key in ActionName]: ActionHandler<key> };
+  handlers: { [key in ActionName]: ActionHandler<key, BrowserType> };
   headlessFlag: boolean;
   parallel: number;
   path: string;
-  browserType: string;
+  browserType: BrowserType;
 };
 
 function prepare(pg): Options {
@@ -91,6 +96,9 @@ function prepare(pg): Options {
 async function pprun({
   file,
   options: { targetScenarios, handlers, imageDir, headlessFlag, browserType }
+}: {
+  file: PathLike;
+  options: Options;
 }) {
   const originalBuffer = fs.readFileSync(file);
   const originalYaml = originalBuffer.toString();
@@ -120,6 +128,7 @@ async function pprun({
   const browser = await getBrowser(browserType, opts);
 
   await run({
+    engine: browserType,
     browser,
     handlers,
     imageDir,
@@ -177,7 +186,7 @@ async function main(pg) {
 }
 
 function getHandlers(browser: BrowserType) {
-  const handlers = browser === "ie" ? IEHandlers : ChromeHandlers;
+  const handlers = browser === "ie" ? IEHandler : ChromeHandler;
 
   return {
     clear: handlers.clearHandler,

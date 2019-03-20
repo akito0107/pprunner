@@ -2,12 +2,12 @@ import { default as assert } from "assert";
 import { default as faker } from "faker";
 import { default as fs } from "fs";
 import { default as RandExp } from "randexp";
-import { By, Key, WebDriver } from "selenium-webdriver";
+import { By, WebDriver } from "selenium-webdriver";
 import { promisify } from "util";
+import { ActionHandler } from "../types";
 import { getBrowserType } from "../util";
-import { ActionHandler } from "./types";
 
-export const inputHandler: ActionHandler<"input", "IE"> = async (
+export const inputHandler: ActionHandler<"input", "ie"> = async (
   driver: WebDriver,
   { action }
 ) => {
@@ -39,17 +39,18 @@ export const inputHandler: ActionHandler<"input", "IE"> = async (
   }
 };
 
-export const waitHandler: ActionHandler<"wait", "IE"> = async (
+export const waitHandler: ActionHandler<"wait", "ie"> = async (
   driver: WebDriver,
   { action }
 ) => {
   await driver.sleep(action.duration);
 };
 
-export const clickHandler: ActionHandler<"click", "IE"> = async (
+export const clickHandler: ActionHandler<"click", "ie"> = async (
   driver: WebDriver,
   { action }
 ) => {
+  // due to webdriver, can't use arrow-functions
   /* tslint:disable only-arrow-functions */
   const scrollIntoViewIfNeeded = function(el) {
     const rect = el.getBoundingClientRect();
@@ -62,13 +63,17 @@ export const clickHandler: ActionHandler<"click", "IE"> = async (
   await element.click();
 };
 
-export async function selectHandler(driver, { action }) {
+export const selectHandler: ActionHandler<"select", "ie"> = async (
+  driver,
+  { action }
+) => {
   const select = action.form;
   const v = select.constrains && select.constrains.values;
   let value = "";
   if (v && v.length > 0) {
-    value = v[Math.floor(Math.random() * v.length)];
+    value = v[Math.floor(Math.random() * v.length)] as any; // FIXME
   } else {
+    // due to webdriver, can't use arrow-functions
     /* tslint:disable only-arrow-functions */
     const selectValueFunction = function(parentSelector) {
       return document.querySelector(parentSelector).children[0].value;
@@ -81,9 +86,13 @@ export async function selectHandler(driver, { action }) {
   }
   const selector = `${select.selector} [value='${value}']`;
   await driver.findElement(By.css(selector)).click();
-}
+};
 
-export async function radioHandler(driver, { action }) {
+export const radioHandler: ActionHandler<"radio", "ie"> = async (
+  driver,
+  { action }
+) => {
+  // due to webdriver, can't use arrow-functions
   /* tslint:disable only-arrow-functions */
   const radioFunction = function(form) {
     const element = Array.from(document.querySelectorAll(form.selector)).filter(
@@ -95,9 +104,12 @@ export async function radioHandler(driver, { action }) {
   };
   /* tslint:enable */
   await driver.executeScript(radioFunction, action.form);
-}
+};
 
-export async function ensureHandler(driver, { action }) {
+export const ensureHandler: ActionHandler<"ensure", "ie"> = async (
+  driver,
+  { action }
+) => {
   if (action.location) {
     const url = await driver.getCurrentUrl();
 
@@ -117,9 +129,9 @@ export async function ensureHandler(driver, { action }) {
       );
     }
   }
-}
+};
 
-export const screenshotHandler: ActionHandler<"screenshot", "IE"> = async (
+export const screenshotHandler: ActionHandler<"screenshot", "ie"> = async (
   driver: WebDriver,
   { action },
   { imageDir }
@@ -131,14 +143,14 @@ export const screenshotHandler: ActionHandler<"screenshot", "IE"> = async (
   await promisify(fs.writeFile)(path, image, "base64");
 };
 
-export const gotoHandler: ActionHandler<"goto", "IE"> = async (
+export const gotoHandler: ActionHandler<"goto", "ie"> = async (
   driver: WebDriver,
   { action }
 ) => {
   await driver.get(action.url);
 };
 
-export const clearHandler: ActionHandler<"clear", "IE"> = async (
+export const clearHandler: ActionHandler<"clear", "ie"> = async (
   driver: WebDriver,
   { action }
 ) => {
