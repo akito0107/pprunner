@@ -1,0 +1,15 @@
+skip: false
+name: 'show-top'
+version: 1
+url: 'http://localhost:3000'
+iteration: 1
+steps:
+  - action:
+      type: screenshot
+      name: 'show_top'
+  - action:
+      type: click
+      selector: 'button[data-test-target="expand-link"]'
+  - action:
+      type: screenshot
+      name: 'expand_button'

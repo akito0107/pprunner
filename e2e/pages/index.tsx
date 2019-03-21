@@ -94,6 +94,7 @@ function Page() {
               onClick={() => setExpanded(!expanded)}
               aria-expanded={expanded}
               aria-label="Show more"
+              data-test-target="expand-link"
             >
               <ExpandMoreIcon />
             </IconButton>
