@@ -12,8 +12,7 @@ import {
   TextField
 } from "@material-ui/core";
 import FormControl from "@material-ui/core/FormControl";
-import FormHelperText from "@material-ui/core/FormHelperText";
-import { makeStyles, useTheme } from "@material-ui/styles";
+import { makeStyles } from "@material-ui/styles";
 import { useField, useForm } from "react-final-form-hooks";
 import Layout from "../components/layout";
 import { theme } from "../module/theme";
@@ -62,7 +61,6 @@ function Page() {
   const lastName = useField("lastName", form);
   const info = useField("info", form);
   const age = useField("age", form);
-  const gender = useField("gender", form);
 
   return (
     <Layout>
@@ -116,8 +114,11 @@ function Page() {
             </Select>
           </FormControl>
           <Grid item={true} xs={8}>
-            <FormControl component="fieldset" className={classes.formControl}>
-              <FormLabel component="legend">Gender</FormLabel>
+            <FormControl
+              component={"fieldset" as "div"}
+              className={classes.formControl}
+            >
+              <FormLabel component={"legend" as "label"}>Gender</FormLabel>
               <RadioGroup
                 aria-label="Gender"
                 name="gender"
@@ -142,8 +143,11 @@ function Page() {
             </FormControl>
           </Grid>
           <Grid item={true} xs={12}>
-            <FormControl component="fieldset" className={classes.formControl}>
-              <FormLabel component="legend">Hobby</FormLabel>
+            <FormControl
+              component={"fieldset" as "div"}
+              className={classes.formControl}
+            >
+              <FormLabel component={"legend" as "label"}>Hobby</FormLabel>
               <FormGroup>
                 <FormControlLabel
                   control={<Checkbox value="gilad" />}
