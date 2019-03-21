@@ -19,23 +19,31 @@
     "build": "yarn clean && tsc --outDir lib",
     "watch": "yarn clean && tsc --outDir lib --watch",
     "test": "jest",
-    "sample": "node ./lib/bin/cli.js -p samples -i images"
+    "test:e2e": "run-p test:e2e:start-app test:e2e:run-tests",
+    "test:e2e:run-tests": "wait-port localhost:3000 && node ./lib/bin/cli.js -p e2e/cases -i images && curl -XGET localhost:3000/_kill",
+    "test:e2e:start-app": "cd e2e; yarn start"
   },
   "devDependencies": {
     "@types/faker": "^4.1.5",
     "@types/jest": "^24.0.11",
+    "@types/node": "^11.11.4",
     "@types/pino": "^5.8.4",
     "@types/puppeteer": "^1.12.3",
     "@types/selenium-webdriver": "^3.0.15",
+    "express": "^4.16.4",
     "jest": "^24.4.0",
+    "npm-run-all": "^4.1.5",
     "power-assert": "^1.6.1",
     "prettier": "^1.16.4",
     "rimraf": "^2.6.3",
     "ts-jest": "^24.0.0",
+    "ts-node": "^8.0.2",
     "tslint": "^5.12.1",
     "tslint-config-prettier": "^1.18.0",
     "tslint-plugin-prettier": "^2.0.1",
-    "typescript": "^3.3.1"
+    "tslint-react": "^3.6.0",
+    "typescript": "^3.3.4",
+    "wait-port": "^0.2.2"
   },
   "dependencies": {
     "commander": "^2.19.0",

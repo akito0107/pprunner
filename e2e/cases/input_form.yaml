@@ -1,0 +1,71 @@
+skip: false
+name: 'show-top'
+version: 1
+url: 'http://localhost:3000/form'
+iteration: 1
+precondition:
+  url: http://localhost:3000
+  steps:
+    - action:
+        type: click
+        selector: 'button[data-test-target="expand-link"]'
+    - action:
+        type: click
+        selector: 'a[data-test-target="click-point"]'
+    - action:
+        type: ensure
+        location:
+          value: 'http://localhost:3000/form'
+    - action:
+        type: screenshot
+        name: precondition_succeeded
+    - action:
+        type: wait
+        duration: 500
+steps:
+  - action:
+      type: wait
+      duration: 500
+  - action:
+      type: input
+      form:
+        selector: 'input[name="firstName"]'
+        value:
+          faker: 'name.firstName'
+  - action:
+      type: screenshot
+      name: firstname_inputted
+  - action:
+      type: input
+      form:
+        selector: 'input[name="lastName"]'
+        value:
+          faker: 'name.lastName'
+  - action:
+      type: screenshot
+      name: lastname_inputted
+  - action:
+      type: input
+      form:
+        selector: 'textarea[name="info"]'
+        constrains:
+          require: True
+          regexp: '([0-9]|[a-z|A-Z]){10,200}'
+  - action:
+      type: screenshot
+      name: info_inputted
+  - action:
+      type: radio
+      form:
+        selector: 'input[name="gender"]'
+        value: 'other'
+  - action:
+      type: screenshot
+      name: gender_selected
+  - action:
+      type: click
+      selector: 'input[value="jason"]'
+  - action:
+      type: screenshot
+      name: hobby_clicked
+

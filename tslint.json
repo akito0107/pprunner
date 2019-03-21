@@ -2,11 +2,17 @@
   "extends": [
     "tslint:latest",
     "tslint-config-prettier",
+    "tslint-react",
     "tslint-plugin-prettier"
   ],
   "rules": {
     "prettier": true,
     "interface-over-type-literal": false,
+    "no-submodule-imports": false,
+    "jsx-no-multiline-js": false,
+    "jsx-curly-spacing": false,
+    "jsx-no-lambda": false,
+    "object-literal-sort-keys": false,
     "no-implicit-dependencies": [true, "dev"]
   }
 }
