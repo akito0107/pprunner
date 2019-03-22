@@ -48,8 +48,6 @@ export const run = async ({
   imageDir,
   launchOption
 }: RunnerOptions) => {
-  logger.info("precondition start.");
-
   const browser = await getBrowser(browserType, launchOption);
   const page = await getPage(browserType, browser);
 
@@ -60,6 +58,7 @@ export const run = async ({
     steps: []
   };
   if (precondition) {
+    logger.info("precondition start.");
     await handlers.goto(page, {
       action: { type: "goto", url: precondition.url }
     });
@@ -128,7 +127,7 @@ export const run = async ({
 
 type ContextReducer = (ctx: Context, res: object) => Context;
 
-async function handleAction<T extends BrowserType>(
+export async function handleAction<T extends BrowserType>(
   iteration: number,
   page: BrowserPage<T>,
   handlers: { [key in ActionName]: ActionHandler<key, T> },
