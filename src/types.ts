@@ -1,5 +1,5 @@
 import { PathLike } from "fs";
-import { default as puppeteer, LaunchOptions, Page } from "puppeteer";
+import { default as puppeteer } from "puppeteer";
 import { WebDriver } from "selenium-webdriver";
 import { ActionName, ActionType } from "./main";
 
@@ -17,8 +17,12 @@ export type BrowserEngine<T extends BrowserType> = T extends "ie"
   ? WebDriver
   : puppeteer.Browser;
 
+export type BrowserPage<T extends BrowserType> = T extends "ie"
+  ? WebDriver
+  : puppeteer.Page;
+
 export type ActionHandler<T extends ActionName, E extends BrowserType> = (
-  page: E extends "chrome" ? Page : WebDriver,
+  page: BrowserPage<E>,
   action: ActionType<T>,
   options?: { imageDir: PathLike; context: Context }
 ) => Promise<any>;
@@ -169,13 +173,4 @@ export type ClearAction = {
     type: "clear";
     selector: string;
   };
-};
-
-export type RunnerOption = {
-  engine: BrowserType;
-  browser: puppeteer.Browser | WebDriver;
-  scenario: Scenario;
-  imageDir: PathLike;
-  launchOption?: LaunchOptions;
-  handlers: { [key in ActionName]: ActionHandler<key, BrowserType> };
 };

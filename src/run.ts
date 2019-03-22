@@ -2,15 +2,28 @@ import { PathLike } from "fs";
 import { default as produce } from "immer";
 import { reduce } from "p-iteration";
 import { default as pino } from "pino";
-import { default as puppeteer, Page } from "puppeteer";
+import { default as puppeteer, LaunchOptions } from "puppeteer";
 import { Builder, WebDriver } from "selenium-webdriver";
-import { Action, ActionName, BrowserEngine, RunnerOption } from "./main";
+import {
+  Action,
+  ActionName,
+  BrowserEngine,
+  BrowserPage,
+  Scenario
+} from "./main";
 import { ActionHandler, BrowserType, Context } from "./types";
-import { isPuppeteer } from "./util";
 
 const logger = pino();
 
-export async function getBrowser(
+type RunnerOptions = {
+  browserType: BrowserType;
+  scenario: Scenario;
+  imageDir: PathLike;
+  launchOption?: LaunchOptions;
+  handlers: { [key in ActionName]: ActionHandler<key, BrowserType> };
+};
+
+async function getBrowser(
   type: BrowserType,
   opts
 ): Promise<BrowserEngine<BrowserType>> {
@@ -19,18 +32,26 @@ export async function getBrowser(
     : puppeteer.launch(opts);
 }
 
+async function getPage(
+  type: BrowserType,
+  browser: BrowserEngine<BrowserType>
+): Promise<BrowserPage<BrowserType>> {
+  return type === "ie"
+    ? (browser as WebDriver)
+    : (browser as puppeteer.Browser).newPage();
+}
+
 export const run = async ({
-  browser,
+  browserType,
   scenario,
   handlers,
-  imageDir
-}: RunnerOption) => {
+  imageDir,
+  launchOption
+}: RunnerOptions) => {
   logger.info("precondition start.");
 
-  let page: puppeteer.Page | WebDriver = browser as WebDriver;
-  if (isPuppeteer(browser)) {
-    page = await (browser as puppeteer.Browser).newPage();
-  }
+  const browser = await getBrowser(browserType, launchOption);
+  const page = await getPage(browserType, browser);
 
   const precondition = scenario.precondition;
   const context: Context = {
@@ -62,7 +83,7 @@ export const run = async ({
         {
           action: { type: "screenshot", name: "pre" }
         },
-        { imageDir }
+        { imageDir, context }
       );
     }
     logger.info("precondition done.");
@@ -95,7 +116,7 @@ export const run = async ({
         {
           action: { type: "screenshot", name: i.toString() }
         },
-        { imageDir }
+        { imageDir, context }
       );
       throw e;
     }
@@ -107,10 +128,10 @@ export const run = async ({
 
 type ContextReducer = (ctx: Context, res: object) => Context;
 
-async function handleAction(
+async function handleAction<T extends BrowserType>(
   iteration: number,
-  page: Page | WebDriver,
-  handlers: { [key in ActionName]: ActionHandler<key> },
+  page: BrowserPage<T>,
+  handlers: { [key in ActionName]: ActionHandler<key, T> },
   steps: Action[],
   { imageDir, context }: { imageDir: PathLike; context: Context },
   reducer: ContextReducer
