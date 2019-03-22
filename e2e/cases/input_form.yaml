@@ -13,6 +13,9 @@ precondition:
         type: click
         selector: 'a[data-test-target="click-point"]'
     - action:
+        type: wait
+        duration: 500
+    - action:
         type: ensure
         location:
           value: 'http://localhost:3000/form'
