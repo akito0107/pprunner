@@ -2,15 +2,19 @@
 
 import { default as cluster } from "cluster";
 import { default as program } from "commander";
-import { default as fs } from "fs";
+import { default as fs, PathLike } from "fs";
 import { default as yaml } from "js-yaml";
 import { default as path } from "path";
 import { default as readdir } from "recursive-readdir";
-import * as ChromeHandlers from "../handlers/chrome-handlers";
-import * as IEHandlers from "../handlers/ie-handlers";
-import { ActionHandler } from "../handlers/types";
-import { ActionName, getBrowser, run } from "../main";
-import { BrowserType, convert } from "../util";
+import {
+  ActionHandler,
+  ActionName,
+  BrowserType,
+  ChromeHandler,
+  IEHandler,
+  run
+} from "../main";
+import { convert } from "../util";
 
 import { default as d } from "debug";
 const debug = d("pprunner");
@@ -32,7 +36,7 @@ program
     "target scenario names (comma delimited)"
   )
   .option("-h, --disable-headless", "disable headless mode")
-  .option("-b, --browser <targetBrowser>", "target browser (defaut = chrome)")
+  .option("-b, --browser <targetBrowser>", "target browser (default = chrome)")
   .parse(process.argv);
 
 process.on("unhandledRejection", err => {
@@ -41,92 +45,18 @@ process.on("unhandledRejection", err => {
   process.exit(1);
 });
 
-type Options = {
-  imageDir: string;
-  targetScenarios: string[];
-  handlers: { [key in ActionName]: ActionHandler<key> };
-  headlessFlag: boolean;
+type CliOptions = {
   parallel: number;
   path: string;
-  browserType: string;
+} & RunningOptions;
+
+type RunningOptions = {
+  imageDir: string;
+  targetScenarios: string[];
+  handlers: { [key in ActionName]: ActionHandler<key, BrowserType> };
+  headlessFlag: boolean;
+  browserType: BrowserType;
 };
-
-function prepare(pg): Options {
-  const imageDir = path.resolve(process.cwd(), pg.imageDir);
-
-  const extensions = {};
-  if (pg.extensionDir && pg.extensionDir !== "") {
-    const extensionsDir = path.resolve(process.cwd(), pg.extensionDir);
-    const filenames = fs.readdirSync(extensionsDir);
-
-    filenames.forEach(f => {
-      const mod = require(path.resolve(extensionsDir, f));
-      if (!mod.name) {
-        // tslint:disable-next-line
-        console.error(`module: ${f} is invalid. required name`);
-      }
-      extensions[mod.name] = mod.handler;
-    });
-  }
-
-  const targetScenarios =
-    pg.target && pg.target !== "" ? pg.target.split(",") : [];
-
-  const handlers = {
-    ...getHandlers(pg.browser),
-    ...extensions
-  };
-
-  return {
-    browserType: pg.browser,
-    handlers,
-    headlessFlag: !pg.disableHeadless,
-    imageDir,
-    parallel: pg.parallel,
-    path: pg.path,
-    targetScenarios
-  };
-}
-
-async function pprun({
-  file,
-  options: { targetScenarios, handlers, imageDir, headlessFlag, browserType }
-}) {
-  const originalBuffer = fs.readFileSync(file);
-  const originalYaml = originalBuffer.toString();
-  const convertedYaml = convert(originalYaml);
-
-  const doc = yaml.safeLoad(convertedYaml);
-  if (doc.skip) {
-    process.stdout.write(`${file} skip...`);
-    return;
-  }
-
-  if (!doc.name) {
-    logger.warn(`scenario: ${file} must be set name prop`);
-    return;
-  }
-  if (targetScenarios.length !== 0 && !targetScenarios.includes(doc.name)) {
-    debug(`skip scenario ${file}`);
-    return;
-  }
-
-  const opts = {
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    headless: headlessFlag,
-    ignoreHTTPSErrors: true
-  };
-  debug(opts);
-  const browser = await getBrowser(browserType, opts);
-
-  await run({
-    browser,
-    handlers,
-    imageDir,
-    launchOption: { headless: headlessFlag },
-    scenario: doc
-  });
-}
 
 async function main(pg) {
   debug(pg);
@@ -176,8 +106,86 @@ async function main(pg) {
   });
 }
 
+async function pprun({
+  file,
+  options: { targetScenarios, handlers, imageDir, headlessFlag, browserType }
+}: {
+  file: PathLike;
+  options: RunningOptions;
+}) {
+  const originalBuffer = fs.readFileSync(file);
+  const originalYaml = originalBuffer.toString();
+  const convertedYaml = convert(originalYaml);
+
+  const doc = yaml.safeLoad(convertedYaml);
+  if (doc.skip) {
+    process.stdout.write(`${file} skip...`);
+    return;
+  }
+
+  if (!doc.name) {
+    logger.warn(`scenario: ${file} must be set name prop`);
+    return;
+  }
+  if (targetScenarios.length !== 0 && !targetScenarios.includes(doc.name)) {
+    debug(`skip scenario ${file}`);
+    return;
+  }
+
+  const launchOption = {
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    headless: headlessFlag,
+    ignoreHTTPSErrors: true
+  };
+
+  await run({
+    browserType,
+    handlers,
+    imageDir,
+    launchOption,
+    scenario: doc
+  });
+}
+
+function prepare(pg): CliOptions {
+  const imageDir = path.resolve(process.cwd(), pg.imageDir);
+
+  const extensions = {};
+  if (pg.extensionDir && pg.extensionDir !== "") {
+    const extensionsDir = path.resolve(process.cwd(), pg.extensionDir);
+    const filenames = fs.readdirSync(extensionsDir);
+
+    filenames.forEach(f => {
+      const mod = require(path.resolve(extensionsDir, f));
+      if (!mod.name) {
+        // tslint:disable-next-line
+        console.error(`module: ${f} is invalid. required name`);
+      }
+      extensions[mod.name] = mod.handler;
+    });
+  }
+
+  const targetScenarios =
+    pg.target && pg.target !== "" ? pg.target.split(",") : [];
+
+  const handlers = {
+    ...getHandlers(pg.browser),
+    ...extensions
+  };
+
+  return {
+    browserType: pg.browser,
+    handlers,
+    headlessFlag: !pg.disableHeadless,
+    imageDir,
+    parallel: pg.parallel,
+    path: pg.path,
+    targetScenarios
+  };
+}
+
 function getHandlers(browser: BrowserType) {
-  const handlers = browser === "ie" ? IEHandlers : ChromeHandlers;
+  const handlers = browser === "ie" ? IEHandler : ChromeHandler;
 
   return {
     clear: handlers.clearHandler,

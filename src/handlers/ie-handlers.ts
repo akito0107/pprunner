@@ -2,12 +2,12 @@ import { default as assert } from "assert";
 import { default as faker } from "faker";
 import { default as fs } from "fs";
 import { default as RandExp } from "randexp";
-import { By, Key, WebDriver } from "selenium-webdriver";
+import { By, WebDriver } from "selenium-webdriver";
 import { promisify } from "util";
+import { ActionHandler } from "../types";
 import { getBrowserType } from "../util";
-import { ActionHandler } from "./types";
 
-export const inputHandler: ActionHandler<"input"> = async (
+export const inputHandler: ActionHandler<"input", "ie"> = async (
   driver: WebDriver,
   { action }
 ) => {
@@ -17,10 +17,16 @@ export const inputHandler: ActionHandler<"input"> = async (
   if (input.value) {
     if (typeof input.value === "string") {
       await target.sendKeys(input.value);
-    } else if (input.value.faker) {
+
+      return { meta: action.meta, value: input.value };
+    }
+    if (input.value.faker) {
       const fake = faker.fake(`{{${input.value.faker}}}`);
       await target.sendKeys(fake);
-    } else if (input.value.date) {
+
+      return { meta: action.meta, value: fake };
+    }
+    if (input.value.date) {
       const d = new Date(input.value.date);
       const date = d.getDate();
       const month = d.getMonth() + 1;
@@ -28,28 +34,39 @@ export const inputHandler: ActionHandler<"input"> = async (
         date < 10 ? "0" + date : date
       }`;
       await target.sendKeys(dateStr);
+
+      return { meta: action.meta, value: dateStr };
     }
-  } else if (input.constrains && input.constrains.regexp) {
+    throw new Error(`unknown input action ${action}`);
+  }
+  if (input.constrains && input.constrains.regexp) {
     const regex = new RegExp(input.constrains.regexp);
 
     const randex = new RandExp(regex);
     randex.defaultRange.subtract(32, 126);
     randex.defaultRange.add(0, 65535);
-    await target.sendKeys(randex.gen());
+    const value = randex.gen();
+    await target.sendKeys(value);
+
+    return { meta: action.meta, value };
   }
+  throw new Error(`unknown input action ${action}`);
 };
 
-export const waitHandler: ActionHandler<"wait"> = async (
+export const waitHandler: ActionHandler<"wait", "ie"> = async (
   driver: WebDriver,
   { action }
 ) => {
   await driver.sleep(action.duration);
+
+  return { meta: action.meta, duration: action.duration };
 };
 
-export const clickHandler: ActionHandler<"click"> = async (
+export const clickHandler: ActionHandler<"click", "ie"> = async (
   driver: WebDriver,
   { action }
 ) => {
+  // due to webdriver, can't use arrow-functions
   /* tslint:disable only-arrow-functions */
   const scrollIntoViewIfNeeded = function(el) {
     const rect = el.getBoundingClientRect();
@@ -60,15 +77,20 @@ export const clickHandler: ActionHandler<"click"> = async (
   await driver.executeScript(scrollIntoViewIfNeeded, element);
   await driver.sleep(1000);
   await element.click();
+  return { meta: action.meta };
 };
 
-export async function selectHandler(driver, { action }) {
+export const selectHandler: ActionHandler<"select", "ie"> = async (
+  driver,
+  { action }
+) => {
   const select = action.form;
   const v = select.constrains && select.constrains.values;
   let value = "";
   if (v && v.length > 0) {
-    value = v[Math.floor(Math.random() * v.length)];
+    value = v[Math.floor(Math.random() * v.length)] as any; // FIXME
   } else {
+    // due to webdriver, can't use arrow-functions
     /* tslint:disable only-arrow-functions */
     const selectValueFunction = function(parentSelector) {
       return document.querySelector(parentSelector).children[0].value;
@@ -81,9 +103,15 @@ export async function selectHandler(driver, { action }) {
   }
   const selector = `${select.selector} [value='${value}']`;
   await driver.findElement(By.css(selector)).click();
-}
 
-export async function radioHandler(driver, { action }) {
+  return { meta: action.meta, value };
+};
+
+export const radioHandler: ActionHandler<"radio", "ie"> = async (
+  driver,
+  { action }
+) => {
+  // due to webdriver, can't use arrow-functions
   /* tslint:disable only-arrow-functions */
   const radioFunction = function(form) {
     const element = Array.from(document.querySelectorAll(form.selector)).filter(
@@ -95,31 +123,38 @@ export async function radioHandler(driver, { action }) {
   };
   /* tslint:enable */
   await driver.executeScript(radioFunction, action.form);
-}
 
-export async function ensureHandler(driver, { action }) {
-  if (action.location) {
-    const url = await driver.getCurrentUrl();
+  return { meta: action.meta, value: action.form.value };
+};
 
-    if (action.location.value) {
-      assert.strictEqual(
-        url,
-        action.location.value,
-        `location check failed: must be ${action.location.value}, but: ${url}`
-      );
-    }
-
-    if (action.location.regexp) {
-      const regexp = new RegExp(action.location.regexp);
-      assert(
-        regexp.test(url),
-        `location check failed: must be ${action.location.regexp}, but: ${url}`
-      );
-    }
+export const ensureHandler: ActionHandler<"ensure", "ie"> = async (
+  driver,
+  { action }
+) => {
+  if (!action.location) {
+    return { meta: action.meta, ensure: false };
   }
-}
+  const url = await driver.getCurrentUrl();
 
-export const screenshotHandler: ActionHandler<"screenshot"> = async (
+  if (action.location.value) {
+    assert.strictEqual(
+      url,
+      action.location.value,
+      `location check failed: must be ${action.location.value}, but: ${url}`
+    );
+  }
+
+  if (action.location.regexp) {
+    const regexp = new RegExp(action.location.regexp);
+    assert(
+      regexp.test(url),
+      `location check failed: must be ${action.location.regexp}, but: ${url}`
+    );
+  }
+  return { meta: action.meta, ensure: true };
+};
+
+export const screenshotHandler: ActionHandler<"screenshot", "ie"> = async (
   driver: WebDriver,
   { action },
   { imageDir }
@@ -127,20 +162,26 @@ export const screenshotHandler: ActionHandler<"screenshot"> = async (
   const filename = action.name;
   const now = Date.now();
   const image = await driver.takeScreenshot();
-  const path = `${imageDir}/${getBrowserType(driver)}-${now}-${filename}.png`;
+  const path = `${imageDir}/ie-${now}-${filename}.png`;
   await promisify(fs.writeFile)(path, image, "base64");
+
+  return { meta: action.meta, value: path };
 };
 
-export const gotoHandler: ActionHandler<"goto"> = async (
+export const gotoHandler: ActionHandler<"goto", "ie"> = async (
   driver: WebDriver,
   { action }
 ) => {
   await driver.get(action.url);
+
+  return { meta: action.meta, value: action.url };
 };
 
-export const clearHandler: ActionHandler<"clear"> = async (
+export const clearHandler: ActionHandler<"clear", "ie"> = async (
   driver: WebDriver,
   { action }
 ) => {
   await driver.findElement(By.css(action.selector)).clear();
+
+  return { meta: action.meta };
 };

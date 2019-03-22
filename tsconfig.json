@@ -6,16 +6,16 @@
     "esModuleInterop": true,
     "removeComments": true,
     "preserveConstEnums": true,
-    "sourceMap": true,
+    "inlineSourceMap": true,
     "outDir": "./lib",
     "declaration": true,
-    "lib": ["es6","es2015.promise", "dom"]
+    "lib": ["es6","es2015.promise", "dom", "es2017"]
   },
   "include": [
     "./src/**/*"
   ],
   "exclude": [
     "./node_modules",
-    "./**/*.test.ts"
+    "./**/__tests__/*.ts"
   ]
 }

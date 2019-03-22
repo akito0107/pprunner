@@ -1,6 +1,5 @@
 import { default as Handlebars } from "handlebars";
-import { default as puppeteer } from "puppeteer";
-export type BrowserType = "ie" | "chrome";
+import { BrowserType } from "./types";
 
 export function convert(yaml: string): string {
   const data = {
@@ -13,10 +12,11 @@ export function convert(yaml: string): string {
   return converted;
 }
 
-export function isPuppeteer(browser: any): browser is puppeteer.Browser {
+export function isPuppeteer(browser: any): boolean {
   return browser.newPage !== undefined;
 }
 
+// TODO: contextから取得する
 export function getBrowserType(browser: any): BrowserType {
   return isPuppeteer(browser) ? "chrome" : "ie";
 }
