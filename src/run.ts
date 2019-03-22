@@ -41,6 +41,12 @@ async function getPage(
     : (browser as puppeteer.Browser).newPage();
 }
 
+const initialContext: Context = {
+  currentIteration: 0,
+  precondition: { steps: [] },
+  iterations: [{ steps: [] }]
+};
+
 export const run = async ({
   browserType,
   scenario,
@@ -52,80 +58,86 @@ export const run = async ({
   const page = await getPage(browserType, browser);
 
   const precondition = scenario.precondition;
-  const context: Context = {
-    currentIteration: 0,
-    precondition: { steps: [] },
-    steps: []
-  };
-  if (precondition) {
-    logger.info("precondition start.");
-    await handlers.goto(page, {
-      action: { type: "goto", url: precondition.url }
-    });
-    try {
-      await handleAction(
-        0,
-        page,
-        handlers,
-        precondition.steps,
-        { imageDir, context },
-        (ctx, res) => {
-          return produce(ctx, draft => {
-            draft.precondition.steps.push(res);
-          });
-        }
-      );
-    } catch (e) {
-      logger.error(e);
-      await handlers.screenshot(
-        page,
-        {
-          action: { type: "screenshot", name: "pre" }
-        },
-        { imageDir, context }
-      );
-    }
-    logger.info("precondition done.");
-  }
+  logger.info("precondition start.");
+  const context: Context = precondition
+    ? await handlePrecondition(page, handlers, scenario, {
+        imageDir,
+        context: initialContext
+      })
+    : initialContext;
+  logger.info("precondition done.");
 
-  const now = Date.now();
-  logger.info(`main scenario start. at ${now.toLocaleString()}`);
-  for (let i = 0; i < scenario.iteration; i++) {
-    logger.info(`${i} th iteration start`);
-    try {
-      logger.info(`${scenario.name} start`);
-      await handlers.goto(page, {
-        action: { type: "goto", url: scenario.url }
-      });
-      await handleAction(
-        i,
-        page,
-        handlers,
-        scenario.steps,
-        { context, imageDir },
-        (ctx, res) => {
-          return produce(ctx, draft => {
-            draft.steps.push(res);
-          });
-        }
-      );
-    } catch (e) {
-      await handlers.screenshot(
-        page,
-        {
-          action: { type: "screenshot", name: i.toString() }
-        },
-        { imageDir, context }
-      );
-      throw e;
-    }
-  }
+  logger.info("main scenario end");
+  await handleIteration(page, handlers, scenario, { imageDir, context });
   logger.info("main scenario end");
 
   await browser.close();
 };
 
-type ContextReducer = (ctx: Context, res: object) => Context;
+type ContextReducer = (ctx: Context, res: any) => Context;
+
+export async function handlePrecondition<T extends BrowserType>(
+  page: BrowserPage<T>,
+  handlers: { [key in ActionName]: ActionHandler<key, T> },
+  scenario: Scenario,
+  { imageDir, context }: { imageDir: PathLike; context: Context }
+): Promise<Context> {
+  await handlers.goto(page, {
+    action: { type: "goto", url: scenario.precondition.url }
+  });
+  return handleAction(
+    0,
+    page,
+    handlers,
+    scenario.precondition.steps,
+    {
+      imageDir,
+      context
+    },
+    (ctx, res) => {
+      return produce(ctx, draft => {
+        draft.precondition.steps.push(res);
+      });
+    }
+  );
+}
+
+export async function handleIteration<T extends BrowserType>(
+  page: BrowserPage<T>,
+  handlers: { [key in ActionName]: ActionHandler<key, T> },
+  scenario: Scenario,
+  { imageDir, context }: { imageDir: PathLike; context: Context }
+): Promise<Context> {
+  return reduce(
+    Array.from({ length: scenario.iteration }),
+    async (acc: Context, current: number, idx) => {
+      logger.info(`${idx} th iteration start`);
+      logger.info(`${scenario.name} start`);
+      await handlers.goto(page, {
+        action: { type: "goto", url: scenario.url }
+      });
+      return handleAction(
+        idx + 1,
+        page,
+        handlers,
+        scenario.steps,
+        {
+          context: acc,
+          imageDir
+        },
+        (ctx, res) => {
+          return produce(ctx, draft => {
+            if (!draft.iterations[idx]) {
+              draft.iterations.push({ steps: [] });
+            }
+            draft.iterations[idx].steps.push(res);
+          });
+        }
+      );
+    },
+    context
+  );
+}
 
 export async function handleAction<T extends BrowserType>(
   iteration: number,
@@ -134,7 +146,7 @@ export async function handleAction<T extends BrowserType>(
   steps: Action[],
   { imageDir, context }: { imageDir: PathLike; context: Context },
   reducer: ContextReducer
-) {
+): Promise<Context> {
   return reduce(
     steps,
     async (acc: Context, step) => {

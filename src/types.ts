@@ -8,7 +8,9 @@ export type Context = {
   precondition: {
     steps: Array<{}>;
   };
-  steps: Array<{}>;
+  iterations: Array<{
+    steps: Array<{}>;
+  }>;
 };
 
 export type BrowserType = "ie" | "chrome";
