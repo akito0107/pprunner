@@ -95,8 +95,14 @@ type Constrains = {
   regexp: string;
 };
 
+type ActionMeta = {
+  name?: string;
+  tag?: string;
+};
+
 export type InputAction = {
   action: {
+    meta?: ActionMeta;
     type: "input";
     form: {
       selector: string;
@@ -108,6 +114,7 @@ export type InputAction = {
 
 export type ClickAction = {
   action: {
+    meta?: ActionMeta;
     type: "click";
     selector: string;
   };
@@ -115,6 +122,7 @@ export type ClickAction = {
 
 export type SelectAction = {
   action: {
+    meta?: ActionMeta;
     type: "select";
     form: {
       selector: string;
@@ -128,6 +136,8 @@ export type SelectAction = {
 
 export type WaitAction = {
   action: {
+    meta?: ActionMeta;
+    name?: string;
     type: "wait";
     duration: number;
   };
@@ -135,6 +145,7 @@ export type WaitAction = {
 
 export type ScreenshotAction = {
   action: {
+    meta?: ActionMeta;
     type: "screenshot";
     name: string;
   };
@@ -142,6 +153,8 @@ export type ScreenshotAction = {
 
 export type EnsureAction = {
   action: {
+    meta?: ActionMeta;
+    name?: string;
     type: "ensure";
     location: {
       regexp?: string;
@@ -152,6 +165,7 @@ export type EnsureAction = {
 
 export type RadioAction = {
   action: {
+    meta?: ActionMeta;
     type: "radio";
     form: {
       selector: string;
@@ -165,6 +179,7 @@ export type RadioAction = {
 
 export type GotoAction = {
   action: {
+    meta?: ActionMeta;
     type: "goto";
     url: string;
   };
@@ -172,6 +187,7 @@ export type GotoAction = {
 
 export type ClearAction = {
   action: {
+    meta?: ActionMeta;
     type: "clear";
     selector: string;
   };
