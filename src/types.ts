@@ -4,6 +4,9 @@ import { WebDriver } from "selenium-webdriver";
 import { ActionName, ActionType } from "./main";
 
 export type Context = {
+  info: {
+    name: string;
+  };
   currentIteration: number;
   precondition: {
     steps: Array<{}>;

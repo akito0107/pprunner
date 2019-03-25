@@ -41,12 +41,6 @@ async function getPage(
     : (browser as puppeteer.Browser).newPage();
 }
 
-const initialContext: Context = {
-  currentIteration: 0,
-  precondition: { steps: [] },
-  iterations: [{ steps: [] }]
-};
-
 export const run = async ({
   browserType,
   scenario,
@@ -56,6 +50,15 @@ export const run = async ({
 }: RunnerOptions) => {
   const browser = await getBrowser(browserType, launchOption);
   const page = await getPage(browserType, browser);
+
+  const initialContext: Context = {
+    info: {
+      name: scenario.name,
+    },
+    currentIteration: 0,
+    precondition: { steps: [] },
+    iterations: [{ steps: [] }]
+  };
 
   const precondition = scenario.precondition;
   logger.info("precondition start.");
