@@ -42,7 +42,7 @@
     "tslint": "^5.12.1",
     "tslint-config-prettier": "^1.18.0",
     "tslint-plugin-prettier": "^2.0.1",
-    "tslint-react": "^3.6.0",
+    "tslint-react": "^4.0.0",
     "typescript": "^3.3.4",
     "wait-port": "^0.2.2"
   },
