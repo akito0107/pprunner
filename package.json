@@ -58,6 +58,7 @@
     "puppeteer": "^1.12.2",
     "randexp": "^0.5.3",
     "recursive-readdir": "^2.2.2",
-    "selenium-webdriver": "^4.0.0-alpha.1"
+    "selenium-webdriver": "^4.0.0-alpha.1",
+    "source-map-support": "^0.5.12"
   }
 }

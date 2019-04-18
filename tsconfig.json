@@ -9,13 +9,8 @@
     "inlineSourceMap": true,
     "outDir": "./lib",
     "declaration": true,
-    "lib": ["es6","es2015.promise", "dom", "es2017"]
+    "lib": ["es6", "es2015.promise", "dom", "es2017"]
   },
-  "include": [
-    "./src/**/*"
-  ],
-  "exclude": [
-    "./node_modules",
-    "./**/__tests__/*.ts"
-  ]
+  "include": ["./src/**/*"],
+  "exclude": ["./node_modules", "./**/__tests__/*.ts"]
 }

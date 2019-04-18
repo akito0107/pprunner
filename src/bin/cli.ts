@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+// tslint:disable-next-line
+require("source-map-support").install();
+
 import { default as cluster } from "cluster";
 import { default as program } from "commander";
 import { default as fs, PathLike } from "fs";
