@@ -7,6 +7,7 @@ export function convert(yaml: string): string {
     password: process.env.PASSWORD || "passw0rd",
     userId: process.env.USER_ID || "test@example.com"
   };
+  registerEnvHelper(Handlebars);
   const template = Handlebars.compile(yaml);
   const converted = template(data);
   return converted;
@@ -19,4 +20,14 @@ export function isPuppeteer(browser: any): boolean {
 // TODO: contextから取得する
 export function getBrowserType(browser: any): BrowserType {
   return isPuppeteer(browser) ? "chrome" : "ie";
+}
+
+function registerEnvHelper(handlebars) {
+  handlebars.registerHelper("env", (envName, options) => {
+    if (process.env[envName] && process.env[envName] !== "") {
+      return process.env[envName];
+    }
+
+    return options.hash.default;
+  });
 }

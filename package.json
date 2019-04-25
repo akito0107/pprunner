@@ -13,8 +13,8 @@
     "puppeteer-runner": "lib/bin/cli.js"
   },
   "scripts": {
-    "lint": "tslint ./src/**/*.ts",
-    "lint:fix": "tslint --fix",
+    "lint": "tslint ./src/**/*.ts ./src/*.ts",
+    "lint:fix": "tslint --fix ./src/**/*.ts ./src/*.ts",
     "clean": "rimraf ./lib/*",
     "build": "yarn clean && tsc --outDir lib",
     "watch": "yarn clean && tsc --outDir lib --watch",

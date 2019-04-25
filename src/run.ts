@@ -53,7 +53,7 @@ export const run = async ({
 
   const initialContext: Context = {
     info: {
-      name: scenario.name,
+      name: scenario.name
     },
     currentIteration: 0,
     precondition: { steps: [] },
