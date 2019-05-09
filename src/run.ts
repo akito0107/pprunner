@@ -15,7 +15,7 @@ import { ActionHandler, BrowserType, Context } from "./types";
 
 const logger = pino();
 
-type RunnerOptions = {
+export type RunnerOptions = {
   browserType: BrowserType;
   scenario: Scenario;
   imageDir: PathLike;
@@ -53,6 +53,7 @@ export const run = async ({
 
   const initialContext: Context = {
     info: {
+      options: { browserType, scenario, imageDir, launchOption, handlers },
       name: scenario.name
     },
     currentIteration: 0,

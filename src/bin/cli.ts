@@ -174,7 +174,7 @@ function prepare(pg): CliOptions {
   };
 
   return {
-    browserType: pg.browser,
+    browserType: pg.browser || "chrome",
     handlers,
     headlessFlag: !pg.disableHeadless,
     imageDir,

@@ -1,11 +1,12 @@
 import { PathLike } from "fs";
 import { default as puppeteer } from "puppeteer";
 import { WebDriver } from "selenium-webdriver";
-import { ActionName, ActionType } from "./main";
+import { ActionName, ActionType, RunnerOptions } from "./main";
 
 export type Context = {
   info: {
     name: string;
+    options: RunnerOptions;
   };
   currentIteration: number;
   precondition: {
