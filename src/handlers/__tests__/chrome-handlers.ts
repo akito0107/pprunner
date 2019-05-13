@@ -16,6 +16,9 @@ describe("inputHandler", () => {
           assert.strictEqual(selector, "#test");
           assert.strictEqual(value, "test");
           done();
+        },
+        waitForSelector: async selector => {
+          assert.strictEqual(selector, "#test");
         }
       } as any,
       {
@@ -35,6 +38,9 @@ describe("inputHandler", () => {
           assert.strictEqual(selector, "#test");
           assert(value);
           done();
+        },
+        waitForSelector: async selector => {
+          assert.strictEqual(selector, "#test");
         }
       } as any,
       {
@@ -56,6 +62,9 @@ describe("inputHandler", () => {
           assert.strictEqual(selector, "#test");
           assert(value);
           done();
+        },
+        waitForSelector: async selector => {
+          assert.strictEqual(selector, "#test");
         }
       } as any,
       {
@@ -77,6 +86,9 @@ describe("inputHandler", () => {
           assert.strictEqual(selector, "#test");
           assert(value);
           done();
+        },
+        waitForSelector: async selector => {
+          assert.strictEqual(selector, "#test");
         }
       } as any,
       {
@@ -98,6 +110,9 @@ describe("inputHandler", () => {
           assert.strictEqual(selector, "#test");
           assert.strictEqual(value, "test");
           done();
+        },
+        waitForSelector: async selector => {
+          assert.strictEqual(selector, "#test");
         }
       } as any,
       {
@@ -162,6 +177,9 @@ describe("radioHandler", () => {
         $eval: async selectorWithValue => {
           assert.strictEqual(selectorWithValue, '#test[value="test"]');
           done();
+        },
+        waitForSelector: async selector => {
+          assert.strictEqual(selector, "#test");
         }
       } as any,
       {
@@ -185,6 +203,9 @@ describe("selectHandler", () => {
         },
         evaluate: async (fn, selector) => {
           assert.strictEqual(selector, "#test");
+        },
+        waitForSelector: async selector => {
+          assert.strictEqual(selector, "#test");
         }
       } as any,
       {
@@ -203,6 +224,9 @@ describe("selectHandler", () => {
           assert.strictEqual(selector, "#test");
           assert(value);
           done();
+        },
+        waitForSelector: async selector => {
+          assert.strictEqual(selector, "#test");
         }
       } as any,
       {
