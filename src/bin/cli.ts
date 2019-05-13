@@ -63,7 +63,9 @@ async function main(pg) {
   const { parallel, path: caseDir, ...options } = prepare(pg);
 
   if (cluster.isMaster) {
-    const files: string[] = await readdir(path.resolve(process.cwd(), caseDir));
+    const files = ((await readdir(
+      path.resolve(process.cwd(), caseDir)
+    )) as string[]).sort();
     if (!parallel) {
       // single thread
       for (const f of files) {
