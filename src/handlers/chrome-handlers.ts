@@ -9,6 +9,8 @@ export const inputHandler: ActionHandler<"input", "chrome"> = async (
   { action }
 ) => {
   const input = action.form;
+  await page.waitForSelector(input.selector);
+
   if (input.value) {
     if (typeof input.value === "string") {
       await page.type(input.selector, input.value);
@@ -74,6 +76,7 @@ export const radioHandler: ActionHandler<"radio", "chrome"> = async (
   page: Page,
   { action }
 ) => {
+  await page.waitForSelector(action.form.selector);
   await page.$eval(`${action.form.selector}[value="${action.form.value}"]`, s =>
     (s as any).click()
   );
@@ -86,6 +89,7 @@ export const selectHandler: ActionHandler<"select", "chrome"> = async (
   { action }
 ) => {
   const select = action.form;
+  await page.waitForSelector(select.selector);
   const v = select.constrains && select.constrains.values;
   if (v && v.length > 0) {
     await page.select(
