@@ -121,6 +121,7 @@ export type ClickAction = {
     meta?: ActionMeta;
     type: "click";
     selector: string;
+    navigation: boolean;
   };
 };
 

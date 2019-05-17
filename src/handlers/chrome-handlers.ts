@@ -67,7 +67,15 @@ export const clickHandler: ActionHandler<"click", "chrome"> = async (
 ) => {
   await page.waitForSelector(action.selector);
   await page.tap("body");
-  await page.$eval(action.selector, s => (s as any).click());
+
+  if (action.navigation) {
+    await Promise.all([
+      page.waitForNavigation(),
+      page.$eval(action.selector, s => (s as any).click())
+    ]);
+  } else {
+    await page.$eval(action.selector, s => (s as any).click());
+  }
 
   return { meta: action.meta };
 };

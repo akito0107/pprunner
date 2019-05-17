@@ -11,6 +11,7 @@ precondition:
         selector: 'button[data-test-target="expand-link"]'
     - action:
         type: click
+        navigation: true
         selector: 'a[data-test-target="click-point"]'
     - action:
         type: wait
