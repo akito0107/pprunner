@@ -21,6 +21,7 @@
     "test": "jest",
     "test:e2e": "run-p test:e2e:start-app test:e2e:run-tests",
     "test:e2e:run-tests": "wait-port localhost:3000 && node ./lib/bin/cli.js -p e2e/cases -i images && curl -XGET localhost:3000/_kill",
+    "test:e2e:run-tests:firefox": "wait-port localhost:3000 && node ./lib/bin/cli.js -b firefox -p e2e/cases -i images && curl -XGET localhost:3000/_kill",
     "test:e2e:start-app": "cd e2e; yarn start"
   },
   "devDependencies": {
@@ -56,6 +57,7 @@
     "p-iteration": "^1.1.8",
     "pino": "^5.11.1",
     "puppeteer": "^1.12.2",
+    "puppeteer-firefox": "^0.5.0",
     "randexp": "^0.5.3",
     "recursive-readdir": "^2.2.2",
     "selenium-webdriver": "^4.0.0-alpha.1",

@@ -17,7 +17,7 @@ export type Context = {
   }>;
 };
 
-export type BrowserType = "ie" | "chrome";
+export type BrowserType = "ie" | "chrome" | "firefox";
 
 export type BrowserEngine<T extends BrowserType> = T extends "ie"
   ? WebDriver
@@ -30,7 +30,7 @@ export type BrowserPage<T extends BrowserType> = T extends "ie"
 export type ActionHandler<T extends ActionName, E extends BrowserType> = (
   page: BrowserPage<E>,
   action: ActionType<T>,
-  options?: { imageDir: PathLike; context: Context }
+  options?: { imageDir: PathLike; browserType: E; context: Context }
 ) => Promise<any>;
 
 export type Scenario = {

@@ -144,11 +144,11 @@ export const ensureHandler: ActionHandler<"ensure", "chrome"> = async (
 export const screenshotHandler: ActionHandler<"screenshot", "chrome"> = async (
   page: Page,
   { action },
-  { imageDir }
+  { imageDir, browserType }
 ) => {
   const filename = action.name;
   const now = Date.now();
-  const fullpath = `${imageDir}/chrome-${now}-${filename}.png`;
+  const fullpath = `${imageDir}/${browserType}-${now}-${filename}.png`;
   await page.screenshot({
     fullPage: true,
     path: fullpath
@@ -161,8 +161,7 @@ export const gotoHandler: ActionHandler<"goto", "chrome"> = async (
   page: Page,
   { action }
 ) => {
-  await page.goto(action.url, { waitUntil: "networkidle2" });
-
+  await Promise.all([page.waitForNavigation(), page.goto(action.url)]);
   return { meta: action.meta, value: action.url };
 };
 

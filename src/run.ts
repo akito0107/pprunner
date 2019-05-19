@@ -3,6 +3,10 @@ import { default as produce } from "immer";
 import { reduce } from "p-iteration";
 import { default as pino } from "pino";
 import { default as puppeteer, LaunchOptions } from "puppeteer";
+import {
+  default as ffpuppeteer,
+  LaunchOptions as ffLaunchOptions
+} from "puppeteer-firefox";
 import { Builder, WebDriver } from "selenium-webdriver";
 import {
   Action,
@@ -29,6 +33,8 @@ async function getBrowser(
 ): Promise<BrowserEngine<BrowserType>> {
   return type === "ie"
     ? new Builder().forBrowser("internet explorer").build()
+    : type === "firefox"
+    ? ffpuppeteer.launch(opts)
     : puppeteer.launch(opts);
 }
 
@@ -38,6 +44,8 @@ async function getPage(
 ): Promise<BrowserPage<BrowserType>> {
   return type === "ie"
     ? (browser as WebDriver)
+    : type === "firefox"
+    ? (browser as ffpuppeteer.Browser).newPage()
     : (browser as puppeteer.Browser).newPage();
 }
 
@@ -66,13 +74,18 @@ export const run = async ({
   const context: Context = precondition
     ? await handlePrecondition(page, handlers, scenario, {
         imageDir,
-        context: initialContext
+        context: initialContext,
+        browserType
       })
     : initialContext;
   logger.info("precondition done.");
 
   logger.info("main scenario end");
-  await handleIteration(page, handlers, scenario, { imageDir, context });
+  await handleIteration(page, handlers, scenario, {
+    imageDir,
+    context,
+    browserType
+  });
   logger.info("main scenario end");
 
   await browser.close();
@@ -84,7 +97,11 @@ export async function handlePrecondition<T extends BrowserType>(
   page: BrowserPage<T>,
   handlers: { [key in ActionName]: ActionHandler<key, T> },
   scenario: Scenario,
-  { imageDir, context }: { imageDir: PathLike; context: Context }
+  {
+    imageDir,
+    context,
+    browserType
+  }: { imageDir: PathLike; context: Context; browserType: T }
 ): Promise<Context> {
   await handlers.goto(page, {
     action: { type: "goto", url: scenario.precondition.url }
@@ -96,7 +113,8 @@ export async function handlePrecondition<T extends BrowserType>(
     scenario.precondition.steps,
     {
       imageDir,
-      context
+      context,
+      browserType
     },
     (ctx, res) => {
       return produce(ctx, draft => {
@@ -110,7 +128,11 @@ export async function handleIteration<T extends BrowserType>(
   page: BrowserPage<T>,
   handlers: { [key in ActionName]: ActionHandler<key, T> },
   scenario: Scenario,
-  { imageDir, context }: { imageDir: PathLike; context: Context }
+  {
+    imageDir,
+    browserType,
+    context
+  }: { imageDir: PathLike; browserType: T; context: Context }
 ): Promise<Context> {
   return reduce(
     Array.from({ length: scenario.iteration }),
@@ -127,7 +149,8 @@ export async function handleIteration<T extends BrowserType>(
         scenario.steps,
         {
           context: acc,
-          imageDir
+          imageDir,
+          browserType
         },
         (ctx, res) => {
           return produce(ctx, draft => {
@@ -148,7 +171,11 @@ export async function handleAction<T extends BrowserType>(
   page: BrowserPage<T>,
   handlers: { [key in ActionName]: ActionHandler<key, T> },
   steps: Action[],
-  { imageDir, context }: { imageDir: PathLike; context: Context },
+  {
+    imageDir,
+    browserType,
+    context
+  }: { imageDir: PathLike; browserType: T; context: Context },
   reducer: ContextReducer
 ): Promise<Context> {
   return reduce(
@@ -165,7 +192,8 @@ export async function handleAction<T extends BrowserType>(
           ...acc,
           currentIteration: iteration
         },
-        imageDir
+        imageDir,
+        browserType
       });
       return reducer(acc, res);
     },
