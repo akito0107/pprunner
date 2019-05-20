@@ -1,6 +1,6 @@
 {
   "name": "pprunner",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "main": "lib/main.js",
   "types": "lib/main.d.ts",
   "repository": "akito0107/pprunner",
