@@ -61,7 +61,10 @@ export const clickHandler: ActionHandler<"click", "chrome"> = async (
   { action }
 ) => {
   await page.waitForSelector(action.selector);
-  await page.tap("body");
+
+  if (!action.avoidClear) {
+    await page.tap("body");
+  }
 
   if (action.navigation) {
     await Promise.all([

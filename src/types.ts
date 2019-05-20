@@ -122,6 +122,7 @@ export type ClickAction = {
     type: "click";
     selector: string;
     navigation: boolean;
+    avoidClear: boolean;
   };
 };
 
