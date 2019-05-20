@@ -27,9 +27,9 @@ export const inputHandler: ActionHandler<"input", "chrome"> = async (
       const d = new Date(input.value.date);
       const date = d.getDate();
       const month = d.getMonth() + 1;
-      const dateStr = `${date < 10 ? "0" + date : date}${
-        month < 10 ? "0" + month : month
-      }${d.getFullYear()}`;
+      const dateStr = `${d.getFullYear()}-${month < 10 ? "0" + month : month}-${
+        date < 10 ? "0" + date : date
+      }`;
       await page.type(input.selector, dateStr);
 
       return { meta: action.meta, value: dateStr };
