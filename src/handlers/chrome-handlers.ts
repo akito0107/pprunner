@@ -24,12 +24,7 @@ export const inputHandler: ActionHandler<"input", "chrome"> = async (
       return { meta: action.meta, value: fake };
     }
     if (input.value.date) {
-      const d = new Date(input.value.date);
-      const date = d.getDate();
-      const month = d.getMonth() + 1;
-      const dateStr = `${d.getFullYear()}-${month < 10 ? "0" + month : month}-${
-        date < 10 ? "0" + date : date
-      }`;
+      const dateStr = `00${input.value.date}`;
       await page.type(input.selector, dateStr);
 
       return { meta: action.meta, value: dateStr };

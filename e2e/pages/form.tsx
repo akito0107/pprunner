@@ -95,6 +95,17 @@ function Page() {
             {...info.input}
           />
         </Grid>
+        <Grid item={true} xs={12}>
+          <TextField
+            id="birthday"
+            type="date"
+            name="birthday"
+            label="birthday"
+            placeholder="Placeholder"
+            className={classes.textField}
+            margin="normal"
+          />
+        </Grid>
         <Grid item={true} xs={4}>
           <FormControl className={classes.formControl}>
             <InputLabel htmlFor="age-simple">Age</InputLabel>

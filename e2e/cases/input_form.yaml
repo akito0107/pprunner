@@ -56,6 +56,12 @@ steps:
           require: True
           regexp: '([0-9]|[a-z|A-Z]){10,200}'
   - action:
+      type: input
+      form:
+        selector: 'input[name="birthday"]'
+        value:
+          date: '1918-08-02'
+  - action:
       type: screenshot
       name: info_inputted
   - action:
