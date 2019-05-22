@@ -34,8 +34,8 @@ async function getBrowser(
   return type === "ie"
     ? new Builder().forBrowser("internet explorer").build()
     : type === "firefox"
-    ? ffpuppeteer.launch(opts)
-    : puppeteer.launch(opts);
+      ? ffpuppeteer.launch(opts)
+      : puppeteer.launch(opts);
 }
 
 async function getPage(
@@ -45,8 +45,8 @@ async function getPage(
   return type === "ie"
     ? (browser as WebDriver)
     : type === "firefox"
-    ? (browser as ffpuppeteer.Browser).newPage()
-    : (browser as puppeteer.Browser).newPage();
+      ? (browser as ffpuppeteer.Browser).newPage()
+      : (browser as puppeteer.Browser).newPage();
 }
 
 export const run = async ({
@@ -73,10 +73,10 @@ export const run = async ({
   logger.info("precondition start.");
   const context: Context = precondition
     ? await handlePrecondition(page, handlers, scenario, {
-        imageDir,
-        context: initialContext,
-        browserType
-      })
+      imageDir,
+      context: initialContext,
+      browserType
+    })
     : initialContext;
   logger.info("precondition done.");
 
@@ -166,6 +166,8 @@ export async function handleIteration<T extends BrowserType>(
   );
 }
 
+const sleep = msec => new Promise(resolve => setTimeout(resolve, msec));
+
 export async function handleAction<T extends BrowserType>(
   iteration: number,
   page: BrowserPage<T>,
@@ -195,6 +197,10 @@ export async function handleAction<T extends BrowserType>(
         imageDir,
         browserType
       });
+
+      if (browserType === "ie") {
+        await sleep(1000);
+      }
       return reducer(acc, res);
     },
     context
