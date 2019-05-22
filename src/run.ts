@@ -69,28 +69,31 @@ export const run = async ({
     iterations: [{ steps: [] }]
   };
 
-  const precondition = scenario.precondition;
-  logger.info("precondition start.");
-  const context: Context = precondition
-    ? await handlePrecondition(page, handlers, scenario, {
+  try {
+    const precondition = scenario.precondition;
+    logger.info("precondition start.");
+    const context: Context = precondition
+      ? await handlePrecondition(page, handlers, scenario, {
+        imageDir,
+        context: initialContext,
+        browserType
+      })
+      : initialContext;
+    logger.info("precondition done.");
+
+    logger.info("main scenario end");
+    await handleIteration(page, handlers, scenario, {
       imageDir,
-      context: initialContext,
+      context,
       browserType
-    })
-    : initialContext;
-  logger.info("precondition done.");
+    });
+    logger.info("main scenario end");
 
-  logger.info("main scenario end");
-  await handleIteration(page, handlers, scenario, {
-    imageDir,
-    context,
-    browserType
-  });
-  logger.info("main scenario end");
-
-  await browser.close();
-  if (browserType === "ie") {
-    await (browser as WebDriver).quit();
+  } finally {
+    await browser.close();
+    if (browserType === "ie") {
+      await (browser as WebDriver).quit();
+    }
   }
 };
 
