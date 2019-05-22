@@ -89,6 +89,9 @@ export const run = async ({
   logger.info("main scenario end");
 
   await browser.close();
+  if (browserType === "ie") {
+    await (browser as WebDriver).quit();
+  }
 };
 
 type ContextReducer = (ctx: Context, res: any) => Context;
