@@ -128,6 +128,11 @@ async function pprun({
     return;
   }
 
+  if (doc.onlyBrowser && !doc.onlyBrowser.includes(browserType)) {
+    process.stdout.write(`this scenario only browser ${doc.onlyBrowser} ${file} skip...`);
+    return;
+  }
+
   if (!doc.name) {
     logger.warn(`scenario: ${file} must be set name prop`);
     return;
