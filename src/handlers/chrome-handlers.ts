@@ -1,5 +1,6 @@
 import { default as assert } from "assert";
 import { default as faker } from "faker";
+import { default as pretty } from "pretty";
 import { Page } from "puppeteer";
 import { default as RandExp } from "randexp";
 import { ActionHandler } from "../types";
@@ -172,4 +173,14 @@ export const clearHandler: ActionHandler<"clear", "chrome"> = async (
   await page.keyboard.press("Backspace");
 
   return { meta: action.meta };
+};
+
+export const dumpHandler: ActionHandler<"dump", "chrome"> = async (
+  page: Page,
+  { action }
+) => {
+  const bodyHTML = await page.evaluate(() => document.body.innerHTML);
+  console.log(pretty(bodyHTML));
+
+  return { meta: action.meta, body: bodyHTML };
 };

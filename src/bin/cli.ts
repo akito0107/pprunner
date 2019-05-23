@@ -206,7 +206,8 @@ function getHandlers(browser: BrowserType) {
     radio: handlers.radioHandler,
     screenshot: handlers.screenshotHandler,
     select: handlers.selectHandler,
-    wait: handlers.waitHandler
+    wait: handlers.waitHandler,
+    dump: handlers.dumpHandler
   };
 }
 

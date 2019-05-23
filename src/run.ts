@@ -59,10 +59,10 @@ export async function run({
     await (browser as WebDriver)
       .manage()
       .window()
-      .setSize(
-        launchOption.defaultViewport.width,
-        launchOption.defaultViewport.height
-      );
+      .setRect({
+        width: launchOption.defaultViewport.width,
+        height: launchOption.defaultViewport.height
+      });
   }
 
   const page = await getPage(browserType, browser);
@@ -96,6 +96,30 @@ export async function run({
       browserType
     });
     console.log("main scenario end");
+  } catch (e) {
+    console.error(`scenario ${scenario.name} failed`);
+    console.error("dom state -------");
+    const screenshotHandler = handlers.screenshot;
+    await screenshotHandler(
+      page,
+      {
+        action: {
+          type: "screenshot",
+          name: "error",
+          fullPage: true
+        }
+      },
+      {
+        imageDir,
+        browserType
+      } as any
+    );
+
+    const dumpHandler = handlers.dump;
+    await dumpHandler(page, { action: { type: "dump" } });
+
+    console.error("-----------------");
+    console.error(e);
   } finally {
     await browser.close();
     if (browserType === "ie") {
