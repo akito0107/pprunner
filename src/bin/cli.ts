@@ -22,9 +22,6 @@ import { convert } from "../util";
 import { default as d } from "debug";
 const debug = d("pprunner");
 
-import { default as pino } from "pino";
-const logger = pino();
-
 import os from "os";
 const numCPUs = os.cpus().length;
 
@@ -124,19 +121,19 @@ async function pprun({
 
   const doc = yaml.safeLoad(convertedYaml);
   if (doc.skip) {
-    process.stdout.write(`${file} skip...`);
+    console.log(`${file} skip...`);
     return;
   }
 
   if (doc.onlyBrowser && !doc.onlyBrowser.includes(browserType)) {
-    process.stdout.write(
+    console.log(
       `this scenario only browser ${doc.onlyBrowser} ${file} skip...`
     );
     return;
   }
 
   if (!doc.name) {
-    logger.warn(`scenario: ${file} must be set name prop`);
+    console.error(`scenario: ${file} must be set name prop`);
     return;
   }
   if (targetScenarios.length !== 0 && !targetScenarios.includes(doc.name)) {
@@ -148,7 +145,7 @@ async function pprun({
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
     headless: headlessFlag,
     ignoreHTTPSErrors: true,
-    defaultViewport: doc.defaultViewport || {}
+    defaultViewport: doc.defaultViewport
   };
 
   await run({
@@ -209,7 +206,8 @@ function getHandlers(browser: BrowserType) {
     radio: handlers.radioHandler,
     screenshot: handlers.screenshotHandler,
     select: handlers.selectHandler,
-    wait: handlers.waitHandler
+    wait: handlers.waitHandler,
+    dump: handlers.dumpHandler
   };
 }
 

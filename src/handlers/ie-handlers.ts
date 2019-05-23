@@ -1,6 +1,7 @@
 import { default as assert } from "assert";
 import { default as faker } from "faker";
 import { default as fs } from "fs";
+import { default as pretty } from "pretty";
 import { default as RandExp } from "randexp";
 import { By, WebDriver } from "selenium-webdriver";
 import { promisify } from "util";
@@ -184,4 +185,15 @@ export const clearHandler: ActionHandler<"clear", "ie"> = async (
   await driver.findElement(By.css(action.selector)).clear();
 
   return { meta: action.meta };
+};
+
+export const dumpHandler: ActionHandler<"dump", "ie"> = async (
+  driver: WebDriver,
+  { action }
+) => {
+  const html = await driver.executeScript(
+    "return document.getElementsByTagName('html')[0].innerHTML"
+  );
+  console.log(pretty(html));
+  return { meta: action.meta, body: html };
 };
