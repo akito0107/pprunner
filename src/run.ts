@@ -34,8 +34,8 @@ async function getBrowser(
   return type === "ie"
     ? new Builder().forBrowser("internet explorer").build()
     : type === "firefox"
-      ? ffpuppeteer.launch(opts)
-      : puppeteer.launch(opts);
+    ? ffpuppeteer.launch(opts)
+    : puppeteer.launch(opts);
 }
 
 async function getPage(
@@ -45,18 +45,29 @@ async function getPage(
   return type === "ie"
     ? (browser as WebDriver)
     : type === "firefox"
-      ? (browser as ffpuppeteer.Browser).newPage()
-      : (browser as puppeteer.Browser).newPage();
+    ? (browser as ffpuppeteer.Browser).newPage()
+    : (browser as puppeteer.Browser).newPage();
 }
 
-export const run = async ({
+export async function run({
   browserType,
   scenario,
   handlers,
   imageDir,
   launchOption
-}: RunnerOptions) => {
+}: RunnerOptions) {
   const browser = await getBrowser(browserType, launchOption);
+
+  if (browserType === "ie" && launchOption.defaultViewport) {
+    await (browser as WebDriver)
+      .manage()
+      .window()
+      .setSize(
+        launchOption.defaultViewport.width,
+        launchOption.defaultViewport.height
+      );
+  }
+
   const page = await getPage(browserType, browser);
 
   const initialContext: Context = {
@@ -74,10 +85,10 @@ export const run = async ({
     logger.info("precondition start.");
     const context: Context = precondition
       ? await handlePrecondition(page, handlers, scenario, {
-        imageDir,
-        context: initialContext,
-        browserType
-      })
+          imageDir,
+          context: initialContext,
+          browserType
+        })
       : initialContext;
     logger.info("precondition done.");
 
@@ -88,14 +99,13 @@ export const run = async ({
       browserType
     });
     logger.info("main scenario end");
-
   } finally {
     await browser.close();
     if (browserType === "ie") {
       await (browser as WebDriver).quit();
     }
   }
-};
+}
 
 type ContextReducer = (ctx: Context, res: any) => Context;
 

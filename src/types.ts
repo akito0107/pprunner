@@ -154,6 +154,7 @@ export type ScreenshotAction = {
     meta?: ActionMeta;
     type: "screenshot";
     name: string;
+    fullPage?: boolean;
   };
 };
 

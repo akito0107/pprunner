@@ -129,7 +129,9 @@ async function pprun({
   }
 
   if (doc.onlyBrowser && !doc.onlyBrowser.includes(browserType)) {
-    process.stdout.write(`this scenario only browser ${doc.onlyBrowser} ${file} skip...`);
+    process.stdout.write(
+      `this scenario only browser ${doc.onlyBrowser} ${file} skip...`
+    );
     return;
   }
 
@@ -145,7 +147,8 @@ async function pprun({
   const launchOption = {
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
     headless: headlessFlag,
-    ignoreHTTPSErrors: true
+    ignoreHTTPSErrors: true,
+    defaultViewport: doc.defaultViewport || {}
   };
 
   await run({

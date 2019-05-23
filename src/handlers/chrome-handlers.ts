@@ -148,7 +148,7 @@ export const screenshotHandler: ActionHandler<"screenshot", "chrome"> = async (
   const now = Date.now();
   const fullpath = `${imageDir}/${browserType}-${now}-${filename}.png`;
   await page.screenshot({
-    fullPage: true,
+    fullPage: action.fullPage,
     path: fullpath
   });
 
