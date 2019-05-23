@@ -1,7 +1,6 @@
 import { PathLike } from "fs";
 import { default as produce } from "immer";
 import { reduce } from "p-iteration";
-import { default as pino } from "pino";
 import { default as puppeteer, LaunchOptions } from "puppeteer";
 import {
   default as ffpuppeteer,
@@ -16,8 +15,6 @@ import {
   Scenario
 } from "./main";
 import { ActionHandler, BrowserType, Context } from "./types";
-
-const logger = pino();
 
 export type RunnerOptions = {
   browserType: BrowserType;
@@ -82,7 +79,7 @@ export async function run({
 
   try {
     const precondition = scenario.precondition;
-    logger.info("precondition start.");
+    console.log("precondition start.");
     const context: Context = precondition
       ? await handlePrecondition(page, handlers, scenario, {
           imageDir,
@@ -90,15 +87,15 @@ export async function run({
           browserType
         })
       : initialContext;
-    logger.info("precondition done.");
+    console.log("precondition done.");
 
-    logger.info("main scenario end");
+    console.log("main scenario end");
     await handleIteration(page, handlers, scenario, {
       imageDir,
       context,
       browserType
     });
-    logger.info("main scenario end");
+    console.log("main scenario end");
   } finally {
     await browser.close();
     if (browserType === "ie") {
@@ -153,8 +150,8 @@ export async function handleIteration<T extends BrowserType>(
   return reduce(
     Array.from({ length: scenario.iteration }),
     async (acc: Context, current: number, idx) => {
-      logger.info(`${idx} th iteration start`);
-      logger.info(`${scenario.name} start`);
+      console.log(`${idx} th iteration start`);
+      console.log(`${scenario.name} start`);
       await handlers.goto(page, {
         action: { type: "goto", url: scenario.url }
       });
@@ -200,7 +197,7 @@ export async function handleAction<T extends BrowserType>(
     steps,
     async (acc: Context, step) => {
       const action = step.action;
-      logger.info(action);
+      console.log(action);
       const handler = handlers[action.type];
       if (!handler) {
         throw new Error(`unknown action type: ${(action as any).type}`);
