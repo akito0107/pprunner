@@ -1,5 +1,7 @@
 # pprunner
 
+__[DEPRECATED] this repository has been moved to monorepo: [https://github.com/akito0107/pupperium](https://github.com/akito0107/pupperium)__
+
 [puppeteer](https://github.com/GoogleChrome/puppeteer) runner.
 
 [![npm version](https://badge.fury.io/js/pprunner.svg)](https://badge.fury.io/js/pprunner) [![Greenkeeper badge](https://badges.greenkeeper.io/akito0107/pprunner.svg)](https://greenkeeper.io/)
